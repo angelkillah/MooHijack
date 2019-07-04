@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-#define NUMBER_OF_GAMES		1
+#define NUMBER_OF_GAMES		3
 
 typedef enum { CPS1, CPS2, CPS3, UNKNOWN } SYSTEM;
 
