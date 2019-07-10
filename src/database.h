@@ -50,6 +50,7 @@ typedef struct _ROMS_INFO {
 	DWORD	dwVromSize;
 	DWORD	dwOkiSize;
 	DWORD	dwZ80Size;
+	DWORD	dwLogoSize;
 } ROMS_INFO;
 
 typedef struct _GAME_LIST {
