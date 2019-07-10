@@ -57,6 +57,7 @@ typedef struct _GAME_LIST {
 	GAME_INFO       GameInfo;
 	ROMS_INFO       RomsInfo;
 	SYSTEM			System;
+	BOOL			bIsMulti;
 	PCHAR			Name;
 	PCHAR			Hash;
 } GAME_LIST;

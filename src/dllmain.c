@@ -13,19 +13,21 @@
 #define PATH_68K_FILE			"C:\\roms\\rom.68k"
 #define PATH_VROM_FILE			"C:\\roms\\rom.vrom"
 #define PATH_LOGO_FILE			"C:\\roms\\logo.png"
+#define PATH_SAVESTATE_FILE		"C:\\roms\\multi.sav"
 
-#define SF2WW_68K_SIZE		    0x100000
-#define SF2WW_VROM_SIZE			0x600000
-#define SF2WW_OKI_SIZE			0x40000
-#define SF2WW_Z80_SIZE			0x10000
-#define SF2WW_LOGO_SIZE			0x28191
+#define SF2HF_68K_SIZE		    0x180000  
+#define SF2HF_VROM_SIZE			0x600000
+#define SF2HF_OKI_SIZE			0x40000
+#define SF2HF_Z80_SIZE			0x10000
+#define SF2HF_LOGO_SIZE			0x35D84   
+#define SF2HF_SAVESTATE_SIZE	0x5487A
 
 // fix ssf2x online speed
 #define SSF2T_SAVESTATE_SIZE		0x5B57F
 #define PATH_SSF2T_SAVESTATE_FILE	"C:\\roms\\ssf2t.sav"
 
 
-#define OFFSET_CPS1				0x2BCC60
+#define OFFSET_CPS1				0x2BD520
 #define OFFSET_CLOCK			OFFSET_CPS1 + 8
 #define OFFSET_CPSB				OFFSET_CLOCK + 8	
 #define OFFSET_CTRL				OFFSET_CPSB + 8
@@ -42,8 +44,9 @@
 #define OFFSET_GFX_SCROLL2		OFFSET_GFX_SCROLL1 + 80
 #define OFFSET_GFX_SCROLL3		OFFSET_GFX_SCROLL2 + 80
 
-#define OFFSET_GETSIZE			0x148238
-#define OFFSET_GETDATA			0x14827A
+#define OFFSET_GETSIZE				0x148238
+#define OFFSET_GETDATA				0x14827A
+#define OFFSET_CPS1_CODE_TO_PATCH	0x1A9E55
 
 PVOID VEHhandler;
 
@@ -52,7 +55,8 @@ BYTE OrigByte_GetSize, OrigByte_GetData;
 BYTE int3[] = "\xcc";
 
 DWORD dwDataSize = 0;
-BOOL bSSF2T_FixSpeed;
+BOOL bSSF2T_FixSpeed = FALSE;
+BOOL bIsMulti = FALSE;
 
 VOID __declspec(dllexport) _()
 {
@@ -133,34 +137,46 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 
 			if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS1))
 			{
-				// logo
-				if (ExceptionInfo->ContextRecord->Rax == SF2WW_LOGO_SIZE)
+				// save state (for multi)
+				if (bIsMulti)
 				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwLogoSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwLogoSize;
+					if (ExceptionInfo->ContextRecord->Rax == SF2HF_SAVESTATE_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = SF2HF_SAVESTATE_SIZE;
+						dwDataSize = SF2HF_SAVESTATE_SIZE;
+					}
+				}
+				// logo
+				if (ExceptionInfo->ContextRecord->Rax == SF2HF_LOGO_SIZE)
+				{
+					if (GameList[dwCurrentGameID].RomsInfo.dwLogoSize)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwLogoSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwLogoSize;
+					}
 				}
 				// 68k
-				if (ExceptionInfo->ContextRecord->Rax == SF2WW_68K_SIZE)
+				if (ExceptionInfo->ContextRecord->Rax == SF2HF_68K_SIZE)
 				{
 					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
 					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
 				}
 
 				// vrom
-				if (ExceptionInfo->ContextRecord->Rax == SF2WW_VROM_SIZE)
+				if (ExceptionInfo->ContextRecord->Rax == SF2HF_VROM_SIZE)
 				{
 					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwVromSize;
 					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwVromSize;
 				}
 
 				// oki
-				if (ExceptionInfo->ContextRecord->Rax == SF2WW_OKI_SIZE)
+				if (ExceptionInfo->ContextRecord->Rax == SF2HF_OKI_SIZE)
 				{
 					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwOkiSize;
 					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwOkiSize;
 				}
 				// z80
-				if (ExceptionInfo->ContextRecord->Rax == SF2WW_Z80_SIZE)
+				if (ExceptionInfo->ContextRecord->Rax == SF2HF_Z80_SIZE)
 				{
 					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwZ80Size;
 					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwZ80Size;
@@ -202,8 +218,18 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			
 			if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS1))
 			{
+				// save state (for multi)
+				if (bIsMulti)
+				{
+					if (dwDataSize == SF2HF_SAVESTATE_SIZE)
+					{
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_SAVESTATE_FILE);
+						dwDataSize = 0;
+					}
+				}
+
 				// logo
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.dwLogoSize)
+				if ((dwDataSize == GameList[dwCurrentGameID].RomsInfo.dwLogoSize) && (GameList[dwCurrentGameID].RomsInfo.dwLogoSize))
 				{
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_LOGO_FILE);
 					dwDataSize = 0;
@@ -283,6 +309,24 @@ BOOL IsSSF2T_Hack()
 	return TRUE;
 }
 
+BOOL IsMulti()
+{
+	HANDLE hFile;
+
+	if (GameList[dwCurrentGameID].bIsMulti == FALSE)
+		return FALSE;
+
+	hFile = CreateFileA(PATH_SAVESTATE_FILE, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		MessageBoxA(NULL, "Missing .sav file in roms folder", "Error", MB_ICONERROR);
+		return FALSE;
+	}
+	CloseHandle(hFile);
+	return TRUE;
+
+}
+
 INT CheckROM()
 {
 	HANDLE hFile;
@@ -325,6 +369,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	{
 		if (GameList[dwCurrentGameID].System == CPS1)
 			PatchCPS1GameSettings(GameBaseAddr);
+		bIsMulti = IsMulti();
 	}
 
 	// install VEH handler
@@ -332,7 +377,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		return 0;
 	
 	// patch code
-	AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + 0x1a4725);
+	AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_CODE_TO_PATCH);
 	VirtualProtect(AddrToPatch, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 	memcpy(AddrToPatch, "\xb0\x01\x90\x90", 4);
 	VirtualProtect(AddrToPatch, 4, dwOldProtect, &dwOldProtect);
