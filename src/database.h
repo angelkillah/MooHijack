@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-#define NUMBER_OF_GAMES		3
+#define NUMBER_OF_GAMES		4
 
 typedef enum { CPS1, CPS2, CPS3, UNKNOWN } SYSTEM;
 
@@ -35,6 +35,7 @@ typedef struct _CPSB_INFO {
 	DWORD	dwCtrl;
 	DWORD	dwPalctrl;
 	DWORD	dwPriorityMask[4];
+	DWORD   dwMultiplyProtection[4];
 	DWORD	dwIn2;
 	DWORD	dwID;
 	DWORD	dwLayerEnableMask[5];

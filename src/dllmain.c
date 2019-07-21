@@ -27,14 +27,16 @@
 #define PATH_SSF2T_SAVESTATE_FILE	"C:\\roms\\ssf2t.sav"
 
 
-#define OFFSET_CPS1				0x2BD520
-#define OFFSET_CLOCK			OFFSET_CPS1 + 8
-#define OFFSET_CPSB				OFFSET_CLOCK + 8	
-#define OFFSET_CTRL				OFFSET_CPSB + 8
-#define OFFSET_PALCTRL			OFFSET_CTRL + 8
-#define OFFSET_PRIORITY_MASK	OFFSET_PALCTRL + 8
-#define OFFSET_IN2				OFFSET_PRIORITY_MASK + 32
-#define OFFSET_ID				OFFSET_IN2 + 60
+#define OFFSET_CPS1					0x2BD520
+#define OFFSET_CLOCK				OFFSET_CPS1 + 8
+#define OFFSET_CPSB					OFFSET_CLOCK + 8	
+#define OFFSET_CTRL					OFFSET_CPSB + 8
+#define OFFSET_PALCTRL				OFFSET_CTRL + 8
+#define OFFSET_PRIORITY_MASK		OFFSET_PALCTRL + 8
+#define OFFSET_MULTIPLY_PROTECTION	OFFSET_PRIORITY_MASK + 32
+#define OFFSET_IN2					OFFSET_MULTIPLY_PROTECTION + 32
+
+#define OFFSET_ID				OFFSET_IN2 + 28
 #define OFFSET_LAYER_MASK       OFFSET_ID + 4
 
 #define OFFSET_GFX_MAPPER		OFFSET_LAYER_MASK + 24
@@ -102,10 +104,14 @@ VOID PatchCPS1GameSettings(PVOID GameBaseAddress)
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 8), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[1]), sizeof(DWORD));
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 16), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[2]), sizeof(DWORD));
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 24), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[3]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[0]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 8), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[1]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 16), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[2]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 24), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[3]), sizeof(DWORD));
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_IN2), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwIn2), sizeof(DWORD));
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_ID), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwID), sizeof(DWORD));
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_LAYER_MASK), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwLayerEnableMask), sizeof(DWORD)*5);
-
+	
 	PVOID GFXMapper = *(PVOID*)((LPBYTE)GameBaseAddress + OFFSET_GFX_MAPPER);	
 	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SPRITES), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxSpritesInfo), sizeof(GFX_SPRITES) * 3);
 	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SPRITES_END), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.dwGfxSpritesEndMarker), sizeof(DWORD));

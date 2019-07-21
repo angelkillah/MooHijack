@@ -5,8 +5,7 @@ import sys
 import re
 
 """
-TODO : 
-- fix extract_gfx() when there are more than 4 gfx files 
+TODO :  
 - support of cps2 and cps3 roms
 """
 
@@ -25,8 +24,7 @@ def extract_audio_samples(name, zf, filelist, cps1_info, offset):
     open('rom.oki', 'wb').write(data)
     
     return 0 
-
-# audiocpu => name.z80 
+ 
 def extract_audio(name, zf, filelist, cps1_info, offset):
     data = cps1_info[offset:]
     end = data.find("oki")
@@ -50,53 +48,67 @@ def extract_cpu(name, zf, filelist, cps1_info):
     for n in xrange(nb_cpu_files):
         filename = re.search('\"(.*)\"', res[n]).group(0)[1:-1]
         cpu_files.append(filename) 
-    
+     
     maincpu = []
     for k in xrange(0, len(cpu_files), 2):
+        format = re.search('(.*)\(', res[k]).group(0)[:-1]
+     
+        # ROM_LOAD16_BYTE
+        if format == "BYTE":
+            file1 = zf.read(cpu_files[k])
+            file2 = zf.read(cpu_files[k+1])
         
-        # SWAP_WORD
-        if k == len(cpu_files)-1:
+            for i in xrange(len(file1)):
+                maincpu.append(file1[i])
+                maincpu.append(file2[i])  
+        
+        # ROM_LOAD16_WORD_SWAP
+        elif format == "WORD_SWAP":
             file1 = zf.read(cpu_files[k])
             for i in xrange(0, len(file1), 2):
                 maincpu.append(file1[i+1])
                 maincpu.append(file1[i])
-            break
-
-        file1 = zf.read(cpu_files[k])
-        file2 = zf.read(cpu_files[k+1])
         
-        for i in xrange(len(file1)):
-            maincpu.append(file1[i])
-            maincpu.append(file2[i])
-
+        # ROM_LOAD16_WORD
+        elif format == "WORD":
+            file1 = zf.read(cpu_files[k])
+            maincpu.append(file1)
+            
+        if k == len(cpu_files)-1:
+            break
+   
     maincpu = "".join(maincpu)        
     open('rom.68k', 'wb').write(maincpu)
+   
     return begin+end 
 
-
 def extract_gfx(name, zf, filelist, cps1_info, offset):
-    # parse cps1.cpp to get gfx files order
+
     gfx_files = []
     data = cps1_info[offset:]
     end = data.find("audiocpu")
     pat = re.compile("ROMX_LOAD\( \"(.*?)\"")
     res = pat.findall(data[:end])
     nb_gfx_files = len(res)
-  
+    
     # prepare vrom array 
-    data = zf.read(res[0])
+    data = zf.read(res[0])  
     vrom_filesize = len(data)*nb_gfx_files
     cps1_gfx = ['\x00'] * vrom_filesize
 
     # fill vrom array
-    for n in xrange(0, nb_gfx_files*2, 2):
-        data = zf.read(res[n/2])
-        j = 0
-        for i in xrange(0, len(cps1_gfx), nb_gfx_files*2):
-            cps1_gfx[i+n] = data[j]
-            cps1_gfx[i+n+1] = data[j+1]
+    l = -1
+    for m in xrange(0, nb_gfx_files, 4):
+        l+=1
+        for n in xrange(0, 8, 2):
+           data = zf.read(res[(n/2)+m])
+           tmp = (len(data)*4) * l
+           j = 0
+           for i in xrange(0, len(data)*4, 8):
+            cps1_gfx[i+n+tmp] = data[j]
+            cps1_gfx[i+n+tmp+1] = data[j+1]
             j+=2
-
+            
     # decode gfx 
     gfxsize = vrom_filesize / 4
     for i in xrange(gfxsize):
