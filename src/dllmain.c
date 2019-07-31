@@ -26,6 +26,8 @@
 #define SSF2T_SAVESTATE_SIZE		0x5B57F
 #define PATH_SSF2T_SAVESTATE_FILE	"C:\\roms\\ssf2t.sav"
 
+#define OFFSET_LOAD_STATE			0x1CFE30   
+#define OFFSET_PATCH_GHOULS			0x220CF6   // patch number of coins in memory (for ghouls) 
 
 #define OFFSET_CPS1					0x2BD520
 #define OFFSET_CLOCK				OFFSET_CPS1 + 8
@@ -52,13 +54,14 @@
 
 PVOID VEHhandler;
 
-PVOID Orig_GetSize, Orig_GetData;
-BYTE OrigByte_GetSize, OrigByte_GetData;
+PVOID Orig_GetSize, Orig_GetData, Orig_PatchGhouls;
+BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchGhouls;
 BYTE int3[] = "\xcc";
 
 DWORD dwDataSize = 0;
 BOOL bSSF2T_FixSpeed = FALSE;
 BOOL bIsMulti = FALSE;
+BOOL bGhoulsPatchApplied = FALSE;
 
 VOID __declspec(dllexport) _()
 {
@@ -94,6 +97,14 @@ PVOID GetGameBaseAddress()
 	}
 }
 
+VOID PatchGhouls(PVOID CoinAddr)
+{
+	DWORD dwOldProtect;
+	VirtualProtect(CoinAddr, sizeof(WORD), PAGE_READWRITE, &dwOldProtect);
+	memcpy(CoinAddr, "\x20\x20", sizeof(WORD));
+	VirtualProtect(CoinAddr, sizeof(WORD), dwOldProtect, &dwOldProtect);
+}
+
 VOID PatchCPS1GameSettings(PVOID GameBaseAddress)
 {
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_CLOCK), (PCHAR)&GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwCpuClockRate, sizeof(DWORD));
@@ -120,6 +131,17 @@ VOID PatchCPS1GameSettings(PVOID GameBaseAddress)
 	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL3), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[2]), sizeof(GFX_SCROLL));
 }
 
+VOID InstallHook(PVOID addr, BYTE *bOrig)
+{
+	DWORD dwOldProtect;
+	VirtualProtect(addr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+
+	memcpy(bOrig, addr, 1);
+	memcpy(addr, &int3, 1);
+
+	VirtualProtect(addr, 1, dwOldProtect, &dwOldProtect);
+}
+
 LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 {
 	DWORD dwOldProtect;
@@ -129,7 +151,24 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 
 	if (dwExceptionCode == EXCEPTION_BREAKPOINT)
 	{
-		if (pExceptionAddr == Orig_GetSize)
+		if ((pExceptionAddr == Orig_PatchGhouls) && (bGhoulsPatchApplied == FALSE))
+		{
+			// patch specific to Daimakaimura
+			if (strcmp(GameList[dwCurrentGameID].Name, "Daimakaimura") == 0)
+			{
+				if ((ExceptionInfo->ContextRecord->Rax == 0x646) && ((ExceptionInfo->ContextRecord->Rcx & 0xFFFF) == 0))
+				{
+					PatchGhouls((PVOID)(ExceptionInfo->ContextRecord->Rax + ExceptionInfo->ContextRecord->Rdx));
+					MessageBoxA(NULL, "Patch correctly applied", "ghouls", MB_OK);
+					bGhoulsPatchApplied = TRUE;
+				}
+			}
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_PatchGhouls, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+
+		else if (pExceptionAddr == Orig_GetSize)
 		{
 			// SSF2X fix speed
 			if (bSSF2T_FixSpeed)
@@ -164,6 +203,12 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				// 68k
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_68K_SIZE)
 				{
+					if (strcmp(GameList[dwCurrentGameID].Name, "Daimakaimura") == 0)
+					{
+						bGhoulsPatchApplied = FALSE;
+						InstallHook(Orig_PatchGhouls, &OrigByte_PatchGhouls);
+						MessageBoxA(NULL, "Applying patch, may take a while...", "patching", MB_OK);
+					}
 					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
 					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
 				}
@@ -188,7 +233,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwZ80Size;
 				}
 			}
-		VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(pExceptionAddr, &OrigByte_GetSize, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
@@ -198,13 +243,18 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(pExceptionAddr, &OrigByte_GetData, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
-
 		ExceptionInfo->ContextRecord->EFlags |= 0x100;
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 	else if (dwExceptionCode == STATUS_SINGLE_STEP) 
 	{
-		if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetSize + 3))
+		if ((pExceptionAddr == (PVOID)((LPBYTE)Orig_PatchGhouls + 4)) && (bGhoulsPatchApplied == FALSE))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_PatchGhouls, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetSize + 3))
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(Orig_GetSize, &int3, 1);
@@ -273,17 +323,6 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 	return EXCEPTION_CONTINUE_SEARCH;
-}
-
-VOID InstallHook(PVOID addr, BYTE *bOrig)
-{
-	DWORD dwOldProtect;
-	VirtualProtect(addr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-	
-	memcpy(bOrig, addr, 1);
-	memcpy(addr, &int3, 1);
-
-	VirtualProtect(addr, 1, dwOldProtect, &dwOldProtect);
 }
 
 INT GetGameInfo(PBYTE hash)
@@ -373,6 +412,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 
 	if (dwCurrentGameID != -1)
 	{
+		MessageBoxA(NULL, GameList[dwCurrentGameID].Name, "game found", MB_OK);
 		if (GameList[dwCurrentGameID].System == CPS1)
 			PatchCPS1GameSettings(GameBaseAddr);
 		bIsMulti = IsMulti();
@@ -382,14 +422,27 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	if ((VEHhandler = AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)ExceptionHandler)) == NULL)
 		return 0;
 	
-	// patch code
+	// patch code (additional gfx map used by moo)
 	AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_CODE_TO_PATCH);
 	VirtualProtect(AddrToPatch, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 	memcpy(AddrToPatch, "\xb0\x01\x90\x90", 4);
 	VirtualProtect(AddrToPatch, 4, dwOldProtect, &dwOldProtect);
-	
+
+	// patch load state
+	if (dwCurrentGameID != -1)
+	{
+		if (GameList[dwCurrentGameID].bLoadState == FALSE)
+		{
+			AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_LOAD_STATE);
+			VirtualProtect(AddrToPatch, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(AddrToPatch, "\xc3", 1);
+			VirtualProtect(AddrToPatch, 1, dwOldProtect, &dwOldProtect);
+		}
+	}
+
 	Orig_GetSize = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETSIZE);
 	Orig_GetData = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETDATA);
+	Orig_PatchGhouls = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_PATCH_GHOULS);
 
 	InstallHook(Orig_GetSize, &OrigByte_GetSize);
 	InstallHook(Orig_GetData, &OrigByte_GetData);
