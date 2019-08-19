@@ -27,7 +27,7 @@
 #define PATH_SSF2T_SAVESTATE_FILE	"C:\\roms\\ssf2t.sav"
 
 #define OFFSET_LOAD_STATE			0x1CFE30   
-#define OFFSET_PATCH_GHOULS			0x220CF6   // patch number of coins in memory (for ghouls) 
+#define OFFSET_PATCH_COINS			0x220CF6   // patch number of coins in memory 
 
 #define OFFSET_CPS1					0x2BD520
 #define OFFSET_CLOCK				OFFSET_CPS1 + 8
@@ -54,14 +54,14 @@
 
 PVOID VEHhandler;
 
-PVOID Orig_GetSize, Orig_GetData, Orig_PatchGhouls;
-BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchGhouls;
+PVOID Orig_GetSize, Orig_GetData, Orig_PatchCoins;
+BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchCoins;
 BYTE int3[] = "\xcc";
 
 DWORD dwDataSize = 0;
 BOOL bSSF2T_FixSpeed = FALSE;
 BOOL bIsMulti = FALSE;
-BOOL bGhoulsPatchApplied = FALSE;
+BOOL bPatchCoinsApplied = FALSE;
 
 VOID __declspec(dllexport) _()
 {
@@ -97,7 +97,7 @@ PVOID GetGameBaseAddress()
 	}
 }
 
-VOID PatchGhouls(PVOID CoinAddr)
+VOID PatchCoins(PVOID CoinAddr)
 {
 	DWORD dwOldProtect;
 	VirtualProtect(CoinAddr, sizeof(WORD), PAGE_READWRITE, &dwOldProtect);
@@ -151,20 +151,20 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 
 	if (dwExceptionCode == EXCEPTION_BREAKPOINT)
 	{
-		if ((pExceptionAddr == Orig_PatchGhouls) && (bGhoulsPatchApplied == FALSE))
+		if ((pExceptionAddr == Orig_PatchCoins) && (bPatchCoinsApplied == FALSE))
 		{
-			// patch specific to Daimakaimura
-			if (strcmp(GameList[dwCurrentGameID].Name, "Daimakaimura") == 0)
+			// patch coins
+			if (GameList[dwCurrentGameID].CoinOffset)
 			{
-				if ((ExceptionInfo->ContextRecord->Rax == 0x646) && ((ExceptionInfo->ContextRecord->Rcx & 0xFFFF) == 0))
+				if ((ExceptionInfo->ContextRecord->Rax == GameList[dwCurrentGameID].CoinOffset) && (((ExceptionInfo->ContextRecord->Rbx >> 8) & 0xf0) == 0xd0))
 				{
-					PatchGhouls((PVOID)(ExceptionInfo->ContextRecord->Rax + ExceptionInfo->ContextRecord->Rdx));
-					MessageBoxA(NULL, "Patch correctly applied", "ghouls", MB_OK);
-					bGhoulsPatchApplied = TRUE;
+					PatchCoins((PVOID)(ExceptionInfo->ContextRecord->Rax + ExceptionInfo->ContextRecord->Rdx));
+					MessageBoxA(NULL, "Patch correctly applied", "patch coin", MB_OK);
+					bPatchCoinsApplied = TRUE;
 				}
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			memcpy(pExceptionAddr, &OrigByte_PatchGhouls, 1);
+			memcpy(pExceptionAddr, &OrigByte_PatchCoins, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 
@@ -203,10 +203,10 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				// 68k
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_68K_SIZE)
 				{
-					if (strcmp(GameList[dwCurrentGameID].Name, "Daimakaimura") == 0)
+					if (GameList[dwCurrentGameID].CoinOffset)
 					{
-						bGhoulsPatchApplied = FALSE;
-						InstallHook(Orig_PatchGhouls, &OrigByte_PatchGhouls);
+						bPatchCoinsApplied = FALSE;
+						InstallHook(Orig_PatchCoins, &OrigByte_PatchCoins);
 						MessageBoxA(NULL, "Applying patch, may take a while...", "patching", MB_OK);
 					}
 					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
@@ -248,10 +248,10 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 	}
 	else if (dwExceptionCode == STATUS_SINGLE_STEP) 
 	{
-		if ((pExceptionAddr == (PVOID)((LPBYTE)Orig_PatchGhouls + 4)) && (bGhoulsPatchApplied == FALSE))
+		if ((pExceptionAddr == (PVOID)((LPBYTE)Orig_PatchCoins + 4)) && (bPatchCoinsApplied == FALSE))
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			memcpy(Orig_PatchGhouls, &int3, 1);
+			memcpy(Orig_PatchCoins, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetSize + 3))
@@ -422,7 +422,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	if ((VEHhandler = AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)ExceptionHandler)) == NULL)
 		return 0;
 	
-	// patch code (additional gfx map used by moo)
+	// patch code (additional gfx map used by Moo)
 	AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_CODE_TO_PATCH);
 	VirtualProtect(AddrToPatch, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 	memcpy(AddrToPatch, "\xb0\x01\x90\x90", 4);
@@ -431,7 +431,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	// patch load state
 	if (dwCurrentGameID != -1)
 	{
-		if (GameList[dwCurrentGameID].bLoadState == FALSE)
+		if (GameList[dwCurrentGameID].CoinOffset)
 		{
 			AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_LOAD_STATE);
 			VirtualProtect(AddrToPatch, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -442,7 +442,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 
 	Orig_GetSize = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETSIZE);
 	Orig_GetData = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETDATA);
-	Orig_PatchGhouls = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_PATCH_GHOULS);
+	Orig_PatchCoins = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_PATCH_COINS);
 
 	InstallHook(Orig_GetSize, &OrigByte_GetSize);
 	InstallHook(Orig_GetData, &OrigByte_GetData);
