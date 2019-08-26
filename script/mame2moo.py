@@ -9,6 +9,28 @@ TODO :
 - support of cps2 and cps3 roms
 """
 
+def convert_audio_samples_cps2(name, zf, filelist, cps2_info, offset):
+    data = cps2_info[offset:]
+    end = data.find("key")
+    pat = re.compile("ROM_LOAD16_WORD_SWAP\( \"(.*?)\"")
+    res = pat.findall(data[:end])
+
+    nb_samples_files = len(res)
+
+    data = []
+    for k in xrange(nb_samples_files):
+
+        file1 = zf.read(res[k])
+        for i in xrange(0, len(file1), 2):
+            data.append(file1[i+1])
+            data.append(file1[i])
+        k += 1
+
+    data = "".join(data)
+    open('rom.qs', 'wb').write(data)
+
+    return 0
+
 def convert_audio_samples_cps1(name, zf, filelist, cps1_info, offset):
     data = cps1_info[offset:]
     end = data.find("aboard")
@@ -24,6 +46,20 @@ def convert_audio_samples_cps1(name, zf, filelist, cps1_info, offset):
     
     return 0 
 
+def convert_audio_cps2(name, zf, filelist, cps2_info, offset):
+    data = cps2_info[offset:]
+    end = data.find("qsound")
+    pat = re.compile("ROM_LOAD\( \"(.*?)\"")
+    res = pat.findall(data[:end])
+
+    nb_samples_files = len(res)
+
+    data = ""
+    for i in xrange(nb_samples_files):
+        data += zf.read(res[i])
+    open('rom.z80', 'wb').write(data)
+    return offset+end
+
 def convert_audio_cps1(name, zf, filelist, cps1_info, offset):
     data = cps1_info[offset:]
     end = data.find("oki")
@@ -36,7 +72,7 @@ def convert_audio_cps1(name, zf, filelist, cps1_info, offset):
     
 def convert_maincpu(name, zf, filelist, cps1_info):
     cpu_files = []
-    s = "ROM_START( " + name
+    s = "ROM_START( " + name + " )"
     begin = cps1_info.find(s)
     data = cps1_info[begin:]
     end = data.find("gfx")
@@ -81,6 +117,27 @@ def convert_maincpu(name, zf, filelist, cps1_info):
     open('rom.68k', 'wb').write(maincpu)
    
     return begin+end 
+
+def unshuffle(buf, length):
+    if length == 2:
+        print "RETURN, len=2"
+        return buf
+
+    if length % 4 != 0:
+        print "ERRROR: This should not happen!"
+        return buf
+
+    length /= 2;
+
+    buf = unshuffle(buf[0:], length)
+    buf = unshuffle(buf[length:], length)
+
+    for i in xrange(length/2):
+        t = buf[length/2 + i]
+        buf[length/2 + i] = buf[length + i]
+        buf[length + i] = t
+
+    return buf
   
 def convert_gfx(name, zf, filelist, cps_info, machine, offset):
     gfx_files = []
@@ -88,6 +145,8 @@ def convert_gfx(name, zf, filelist, cps_info, machine, offset):
     end = data.find("audiocpu")
     if machine == "CPS1":
         pat = re.compile("ROMX_LOAD\( \"(.*?)\"")
+    elif machine == "CPS2":
+        pat = re.compile("ROM_LOAD64_WORD\( \"(.*?)\"")
     res = pat.findall(data[:end])
     nb_gfx_files = len(res)
     
@@ -120,7 +179,14 @@ def convert_gfx(name, zf, filelist, cps_info, machine, offset):
            
 
     gfxsize = vrom_filesize / 4
-        
+
+    if machine == "CPS2":
+        banksize = 0x200000
+        for i in xrange(0, vrom_filesize, banksize):
+            res = unshuffle(cps_gfx[i:], banksize/8)
+            for j in xrange (0, len(res)):
+                cps_gfx[i+j] = res[j];
+
     # decode gfx 
     for i in xrange(gfxsize):
         src = ord(cps_gfx[4 * i]) + (ord(cps_gfx[4 * i + 1]) << 8) + (ord(cps_gfx[4 * i + 2]) << 16) + (ord(cps_gfx[4 * i + 3]) << 24)
@@ -151,6 +217,22 @@ def convert_gfx(name, zf, filelist, cps_info, machine, offset):
     open('rom.vrom', 'wb').write(out)
     return offset+end
 
+def convert_cps2(name, zf, filelist, cps_info):
+    print "Converting maincpu..."
+    offset = convert_maincpu(name, zf, filelist, cps_info)
+    print "[+] maincpu converted"
+
+    print "Converting gfx..."
+    offset = convert_gfx(name, zf, filelist, cps_info, "CPS2", offset)
+    print "[+] gfx converted"
+
+    print "Converting audio..."
+    offset = convert_audio_cps2(name, zf, filelist, cps_info, offset)
+    print "[+] audio converted"
+
+    print "Converting qsound samples.."
+    convert_audio_samples_cps2(name, zf, filelist, cps_info, offset)
+    print "[+] qsound samples extracted"
 
 def convert_cps1(name, zf, filelist, cps_info):
     print "Converting maincpu..."
@@ -183,7 +265,10 @@ def main(argc, argv):
     if argv[2] == "cps1":
         cps_info = open('cps1.cpp', 'r').read()
         convert_cps1(zipped_rom[:-4], zf, filelist, cps_info)
-    elif (argv[2] == "cps2") or (argv[2] == "cps3"):
+    if argv[2] == "cps2":
+        cps_info = open('cps2.cpp', 'r').read()
+        convert_cps2(zipped_rom[:-4], zf, filelist, cps_info)
+    elif argv[2] == "cps3":
         print "[-] not suppported yet"
         sys.exit(0)
     else:
