@@ -118,28 +118,26 @@ def convert_maincpu(name, zf, filelist, cps1_info):
    
     return begin+end 
 
-def unshuffle(buf, length):
+def unshuffle(idx, length):
+    global cps_gfx
     if length == 2:
-        print "RETURN, len=2"
-        return buf
+        return
+    if length %4 != 0:
+        print "ERROR:  This should not happen!"
+        return
 
-    if length % 4 != 0:
-        print "ERRROR: This should not happen!"
-        return buf
+    length /= 2
 
-    length /= 2;
-
-    buf = unshuffle(buf[0:], length)
-    buf = unshuffle(buf[length:], length)
+    unshuffle(idx, length)
+    unshuffle(idx + length, length)
 
     for i in xrange(length/2):
-        t = buf[length/2 + i]
-        buf[length/2 + i] = buf[length + i]
-        buf[length + i] = t
-
-    return buf
+        t = cps_gfx[idx + length / 2 + i]
+        cps_gfx[idx + length / 2 + i] = cps_gfx[idx + length + i]
+        cps_gfx[idx + length + i] = t
   
 def convert_gfx(name, zf, filelist, cps_info, machine, offset):
+    global cps_gfx
     gfx_files = []
     data = cps_info[offset:]
     end = data.find("audiocpu")
@@ -183,9 +181,7 @@ def convert_gfx(name, zf, filelist, cps_info, machine, offset):
     if machine == "CPS2":
         banksize = 0x200000
         for i in xrange(0, vrom_filesize, banksize):
-            res = unshuffle(cps_gfx[i:], banksize/8)
-            for j in xrange (0, len(res)):
-                cps_gfx[i+j] = res[j];
+            unshuffle(i, banksize/8)
 
     # decode gfx 
     for i in xrange(gfxsize):
@@ -275,4 +271,5 @@ def main(argc, argv):
         usage()
     
 if __name__ == "__main__":
+    cps_gfx = []
     main(len(sys.argv), sys.argv)
