@@ -46,17 +46,31 @@ typedef struct _GAME_INFO {
 	MAPPER_GFX	MapperGfx;
 } GAME_INFO;
 
-typedef struct _ROMS_INFO {
+typedef struct _ROMS_INFO_CPS1 {
 	DWORD	dw68kSize;
 	DWORD	dwVromSize;
 	DWORD	dwOkiSize;
 	DWORD	dwZ80Size;
 	DWORD	dwLogoSize;
-} ROMS_INFO;
+} ROMS_INFO_CPS1;
+
+typedef struct _ROMS_INFO_CPS2 {
+	DWORD	dw68kSize;
+	DWORD	dw68ySize;
+	DWORD	dwVromSize;
+	DWORD	dwQsSize;
+	DWORD	dwZ80Size;
+	DWORD	dwNvSize;
+	DWORD	dwLogoSize;
+} ROMS_INFO_CPS2;
+
 
 typedef struct _GAME_LIST {
 	GAME_INFO       GameInfo;
-	ROMS_INFO       RomsInfo;
+	union {
+		ROMS_INFO_CPS1  RomsInfoCPS1;
+		ROMS_INFO_CPS2  RomsInfoCPS2;
+	} RomsInfo;
 	SYSTEM			System;
 	BOOL			bIsMulti;
 	WORD			CoinOffset;

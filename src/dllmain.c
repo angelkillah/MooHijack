@@ -8,12 +8,19 @@
 #define MAX_MODULES				500
 
 // CPS1
-#define PATH_OKI_FILE			"C:\\roms\\rom.oki"
-#define PATH_Z80_FILE			"C:\\roms\\rom.z80"
-#define PATH_68K_FILE			"C:\\roms\\rom.68k"
-#define PATH_VROM_FILE			"C:\\roms\\rom.vrom"
-#define PATH_LOGO_FILE			"C:\\roms\\logo.png"
-#define PATH_SAVESTATE_FILE		"C:\\roms\\multi.sav"
+#define PATH_OKI_FILE			".\\roms\\rom.oki"
+#define PATH_Z80_FILE			".\\roms\\rom.z80"
+#define PATH_68K_FILE			".\\roms\\rom.68k"
+#define PATH_VROM_FILE			".\\roms\\rom.vrom"
+
+// CPS2
+#define PATH_QS_FILE			".\\roms\\rom.qs"
+#define PATH_NV_FILE			".\\roms\\rom.nv"
+#define PATH_68Y_FILE			".\\roms\\rom.68y"
+
+// ALL SYSTEMS
+#define PATH_LOGO_FILE			".\\roms\\logo.png"
+#define PATH_SAVESTATE_FILE		".\\roms\\multi.sav"
 
 #define SF2HF_68K_SIZE		    0x180000  
 #define SF2HF_VROM_SIZE			0x600000
@@ -22,14 +29,19 @@
 #define SF2HF_LOGO_SIZE			0x35D84   
 #define SF2HF_SAVESTATE_SIZE	0x5487A
 
-// fix ssf2x online speed
-#define SSF2T_SAVESTATE_SIZE		0x5B57F
-#define PATH_SSF2T_SAVESTATE_FILE	"C:\\roms\\ssf2t.sav"
+#define SFA3_LOGO_SIZE			0x12E3C
+#define SFA3_SAVESTATE_SIZE		0x5B57F
 
-#define OFFSET_LOAD_STATE			0x1CFE30   
+#define SF2CE_ID				2
+#define SF2HF_ID				3
+#define SFA2_ID					7
+#define SFA3_ID					8
+
 #define OFFSET_PATCH_COINS			0x220CF6   // patch number of coins in memory 
 
-#define OFFSET_CPS1					0x2BD520
+int	OFFSET_LOAD_STATE  = 0x1CFE30;
+int OFFSET_CPS1		   = 0x2BD520;
+
 #define OFFSET_CLOCK				OFFSET_CPS1 + 8
 #define OFFSET_CPSB					OFFSET_CLOCK + 8	
 #define OFFSET_CTRL					OFFSET_CPSB + 8
@@ -48,18 +60,18 @@
 #define OFFSET_GFX_SCROLL2		OFFSET_GFX_SCROLL1 + 80
 #define OFFSET_GFX_SCROLL3		OFFSET_GFX_SCROLL2 + 80
 
-#define OFFSET_GETSIZE				0x148238
-#define OFFSET_GETDATA				0x14827A
-#define OFFSET_CPS1_CODE_TO_PATCH	0x1A9E55
+int OFFSET_GETSIZE = 0x148238;
+int OFFSET_GETDATA = 0x14827A;
+int OFFSET_CPS1_CODE_TO_PATCH = 0x1A9E55;
+int OFFSET_SWITCH_GAMES = 0x1CEFE;
 
 PVOID VEHhandler;
 
-PVOID Orig_GetSize, Orig_GetData, Orig_PatchCoins;
-BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchCoins;
+PVOID Orig_GetSize, Orig_GetData, Orig_PatchCoins, Orig_SwitchGames;
+BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchCoins, OrigByte_SwitchGames;
 BYTE int3[] = "\xcc";
 
 DWORD dwDataSize = 0;
-BOOL bSSF2T_FixSpeed = FALSE;
 BOOL bIsMulti = FALSE;
 BOOL bPatchCoinsApplied = FALSE;
 
@@ -156,7 +168,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			// patch coins
 			if (GameList[dwCurrentGameID].CoinOffset)
 			{
-				if ((ExceptionInfo->ContextRecord->Rax == GameList[dwCurrentGameID].CoinOffset) && (((ExceptionInfo->ContextRecord->Rbx >> 8) & 0xf0) == 0xd0))
+				if ((ExceptionInfo->ContextRecord->Rax == GameList[dwCurrentGameID].CoinOffset) && (((ExceptionInfo->ContextRecord->Rbx >> 8) & 0xf0) >= 0xd0))
 				{
 					PatchCoins((PVOID)(ExceptionInfo->ContextRecord->Rax + ExceptionInfo->ContextRecord->Rdx));
 					MessageBoxA(NULL, "Patch correctly applied", "patch coin", MB_OK);
@@ -167,19 +179,24 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(pExceptionAddr, &OrigByte_PatchCoins, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
-
+		else if (pExceptionAddr == Orig_SwitchGames)
+		{
+			if (ExceptionInfo->ContextRecord->Rax == SF2HF_ID) // CPS1
+			{
+				if(strcmp(GameList[dwCurrentGameID].Name, "Street Fighter 2 Champion Edition") == 0)
+					ExceptionInfo->ContextRecord->Rax = SF2CE_ID;
+			}
+			else if (ExceptionInfo->ContextRecord->Rax == SFA3_ID) // CPS2
+			{
+				if (strcmp(GameList[dwCurrentGameID].Name, "Street Fighter Alpha 2") == 0)
+					ExceptionInfo->ContextRecord->Rax = SFA2_ID;
+			}
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_SwitchGames, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
 		else if (pExceptionAddr == Orig_GetSize)
 		{
-			// SSF2X fix speed
-			if (bSSF2T_FixSpeed)
-			{
-				if (ExceptionInfo->ContextRecord->Rax == SSF2T_SAVESTATE_SIZE)
-				{
-					ExceptionInfo->ContextRecord->Rax = SSF2T_SAVESTATE_SIZE;
-					dwDataSize = SSF2T_SAVESTATE_SIZE;
-				}
-			}
-
 			if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS1))
 			{
 				// save state (for multi)
@@ -194,10 +211,10 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				// logo
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_LOGO_SIZE)
 				{
-					if (GameList[dwCurrentGameID].RomsInfo.dwLogoSize)
+					if (GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwLogoSize)
 					{
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwLogoSize;
-						dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwLogoSize;
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwLogoSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwLogoSize;
 					}
 				}
 				// 68k
@@ -209,28 +226,49 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						InstallHook(Orig_PatchCoins, &OrigByte_PatchCoins);
 						MessageBoxA(NULL, "Applying patch, may take a while...", "patching", MB_OK);
 					}
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dw68kSize;
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dw68kSize;
+					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dw68kSize;
 				}
 
 				// vrom
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_VROM_SIZE)
 				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwVromSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwVromSize;
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwVromSize;
+					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwVromSize;
 				}
 
 				// oki
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_OKI_SIZE)
 				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwOkiSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwOkiSize;
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwOkiSize;
+					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwOkiSize;
 				}
 				// z80
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_Z80_SIZE)
 				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.dwZ80Size;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.dwZ80Size;
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwZ80Size;
+					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwZ80Size;
+				}
+			}
+			else if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS2))
+			{
+				// save state (for multi)
+				if (bIsMulti)
+				{
+					if (ExceptionInfo->ContextRecord->Rax == SFA3_SAVESTATE_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = SFA3_SAVESTATE_SIZE;
+						dwDataSize = SFA3_SAVESTATE_SIZE;
+					}
+				}
+				// logo
+				if (ExceptionInfo->ContextRecord->Rax == SFA3_LOGO_SIZE)
+				{
+					if (GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwLogoSize)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwLogoSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwLogoSize;
+					}
 				}
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -254,6 +292,12 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(Orig_PatchCoins, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_SwitchGames + 3))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_SwitchGames, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetSize + 3))
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -262,16 +306,6 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetData + 3))
 		{
-			// SSF2X fix speed
-			if (bSSF2T_FixSpeed)
-			{
-				if (dwDataSize == SSF2T_SAVESTATE_SIZE)
-				{
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_SSF2T_SAVESTATE_FILE);
-					dwDataSize = 0;
-				}
-			}
-			
 			if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS1))
 			{
 				// save state (for multi)
@@ -285,35 +319,58 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				}
 
 				// logo
-				if ((dwDataSize == GameList[dwCurrentGameID].RomsInfo.dwLogoSize) && (GameList[dwCurrentGameID].RomsInfo.dwLogoSize))
+				if ((dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwLogoSize) && (GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwLogoSize))
 				{
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_LOGO_FILE);
 					dwDataSize = 0;
 				}
 				// oki
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.dwOkiSize)
+				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwOkiSize)
 				{
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_OKI_FILE);
 					dwDataSize = 0;
 				}
 				// z80
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.dwZ80Size)
+				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwZ80Size)
 				{
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_Z80_FILE);
 					dwDataSize = 0;
 				}
 				// 68k
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.dw68kSize)
+				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dw68kSize)
 				{
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_68K_FILE);
 					dwDataSize = 0;
 				}
 				// vrom
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.dwVromSize)
+				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS1.dwVromSize)
 				{
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_VROM_FILE);
 					dwDataSize = 0;
 				}
+			}
+			else if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS2))
+			{
+				// save state (for multi)
+				if (bIsMulti)
+				{
+					if (dwDataSize == SFA3_SAVESTATE_SIZE)
+					{
+						// other check to ensure that current save state != 2x 
+						PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
+						if (GameData[8] != '\x44')
+							PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_SAVESTATE_FILE);
+						dwDataSize = 0;
+					}
+				}
+
+				// logo
+				if ((dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwLogoSize) && (GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwLogoSize))
+				{
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_LOGO_FILE);
+					dwDataSize = 0;
+				}
+
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(Orig_GetData, &int3, 1);
@@ -344,16 +401,6 @@ INT GetGameInfo(PBYTE hash)
 	return -1;
 }
 
-BOOL IsSSF2T_Hack()
-{
-	HANDLE hFile;
-	hFile = CreateFileA(PATH_SSF2T_SAVESTATE_FILE, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if(hFile == INVALID_HANDLE_VALUE)
-		return FALSE;
-	CloseHandle(hFile);
-	return TRUE;
-}
-
 BOOL IsMulti()
 {
 	HANDLE hFile;
@@ -370,6 +417,15 @@ BOOL IsMulti()
 	CloseHandle(hFile);
 	return TRUE;
 
+}
+
+BOOL IsEuroVersion()
+{
+	CHAR version[MAX_PATH];
+	GetPrivateProfileStringA("MooHijack", "version", "", version, MAX_PATH, ".\\config.ini");
+	if (strcmp(version, "european") == 0)
+		return TRUE;
+	return FALSE;
 }
 
 INT CheckROM()
@@ -391,8 +447,8 @@ INT CheckROM()
 	
 	HashSHA1(buf, dwFileSize, hash);
 	dwCurrentGameID = GetGameInfo(hash);
-	
 	free(buf);
+
 	return dwCurrentGameID;
 }
 
@@ -402,17 +458,27 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	PVOID GameBaseAddr = GetGameBaseAddress();
 	PVOID AddrToPatch = NULL;
 	
-	bSSF2T_FixSpeed = IsSSF2T_Hack();
 	DB_Init();
 	
-	if ((CheckROM() == -1) && (bSSF2T_FixSpeed == FALSE))
+	// fix offsets for international version
+	if (IsEuroVersion() == FALSE)
+	{
+		OFFSET_LOAD_STATE = 0x1A43E0;
+		OFFSET_CPS1 = 0x2BF0B0;
+		OFFSET_GETSIZE = 0x1487f8;
+		OFFSET_GETDATA = 0x14883A;
+		OFFSET_CPS1_CODE_TO_PATCH = 0x1AEE05;
+		OFFSET_SWITCH_GAMES = 0x1D274;
+	}
+	
+	if (CheckROM() == -1)
 		return 1;
 	
 	Sleep(2000);
 
 	if (dwCurrentGameID != -1)
 	{
-		MessageBoxA(NULL, GameList[dwCurrentGameID].Name, "game found", MB_OK);
+		//MessageBoxA(NULL, GameList[dwCurrentGameID].Name, "game found", MB_OK);
 		if (GameList[dwCurrentGameID].System == CPS1)
 			PatchCPS1GameSettings(GameBaseAddr);
 		bIsMulti = IsMulti();
@@ -422,34 +488,38 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	if ((VEHhandler = AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)ExceptionHandler)) == NULL)
 		return 0;
 	
-	// patch code (additional gfx map used by Moo)
-	AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_CODE_TO_PATCH);
-	VirtualProtect(AddrToPatch, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-	memcpy(AddrToPatch, "\xb0\x01\x90\x90", 4);
-	VirtualProtect(AddrToPatch, 4, dwOldProtect, &dwOldProtect);
-
-	// patch load state
-	if (dwCurrentGameID != -1)
+	if (GameList[dwCurrentGameID].System == CPS1)
 	{
-		if (GameList[dwCurrentGameID].CoinOffset)
+		// patch code (additional gfx map used by Moo)
+		AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_CODE_TO_PATCH);
+		VirtualProtect(AddrToPatch, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+		memcpy(AddrToPatch, "\xb0\x01\x90\x90", 4);
+		VirtualProtect(AddrToPatch, 4, dwOldProtect, &dwOldProtect);
+
+		// patch load state
+		if (dwCurrentGameID != -1)
 		{
-			AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_LOAD_STATE);
-			VirtualProtect(AddrToPatch, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			memcpy(AddrToPatch, "\xc3", 1);
-			VirtualProtect(AddrToPatch, 1, dwOldProtect, &dwOldProtect);
+			if (GameList[dwCurrentGameID].CoinOffset)
+			{
+				AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_LOAD_STATE);
+				VirtualProtect(AddrToPatch, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+				memcpy(AddrToPatch, "\xc3", 1);
+				VirtualProtect(AddrToPatch, 1, dwOldProtect, &dwOldProtect);
+			}
 		}
 	}
 
 	Orig_GetSize = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETSIZE);
 	Orig_GetData = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETDATA);
 	Orig_PatchCoins = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_PATCH_COINS);
+	Orig_SwitchGames = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SWITCH_GAMES);
 
 	InstallHook(Orig_GetSize, &OrigByte_GetSize);
 	InstallHook(Orig_GetData, &OrigByte_GetData);
+	InstallHook(Orig_SwitchGames, &OrigByte_SwitchGames);
 
 	return 1;
 }
-
 BOOL APIENTRY DllMain(
 	_In_ HMODULE hInstDll,
 	_In_ DWORD fdwReason,
