@@ -126,12 +126,13 @@ def unshuffle(cps_gfx, idx, length):
     length //= 2
 
     unshuffle(cps_gfx, idx, length)
-    unshuffle(cps_gfx, idx + length, length)
+    unshuffle(cps_gfx, idx + (length * 8), length)
 
     for i in range(length//2):
-        t = cps_gfx[idx + length // 2 + i]
-        cps_gfx[idx + length // 2 + i] = cps_gfx[idx + length + i]
-        cps_gfx[idx + length + i] = t
+        pos1 = 8 * (i + length // 2) + idx
+        pos2 = 8 * (i + length) + idx
+        cps_gfx[pos1: pos1 + 8], cps_gfx[pos2: pos2 + 8] = \
+            cps_gfx[pos2: pos2 + 8], cps_gfx[pos1: pos1 + 8]
   
 def convert_gfx(name, zf, filelist, cps_info, machine, offset):
     gfx_files = []
