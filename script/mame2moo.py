@@ -4,8 +4,8 @@ import zipfile
 import sys
 import re
 
-def convert_audio_samples_cps2(name, zf, filelist, cps2_info, offset):
-    data = cps2_info[offset:]
+def convert_audio_samples_cps2(name, zf, filelist, cps_info, offset):
+    data = cps_info[offset:]
     end = data.find("key")
     pat = re.compile("ROM_LOAD16_WORD_SWAP\( \"(.*?)\"")
     res = pat.findall(data[:end])
@@ -25,8 +25,8 @@ def convert_audio_samples_cps2(name, zf, filelist, cps2_info, offset):
 
     return 0
 
-def convert_audio_samples_cps1(name, zf, filelist, cps1_info, offset):
-    data = cps1_info[offset:]
+def convert_audio_samples_cps1(name, zf, filelist, cps_info, offset):
+    data = cps_info[offset:]
     end = data.find("aboard")
     pat = re.compile("ROM_LOAD\( \"(.*?)\"")
     res = pat.findall(data[:end])
@@ -55,8 +55,8 @@ def convert_audio_cps2(name, zf, filelist, cps2_info, offset):
 
     return offset+end
 
-def convert_audio_cps1(name, zf, filelist, cps1_info, offset):
-    data = cps1_info[offset:]
+def convert_audio_cps1(name, zf, filelist, cps_info, offset):
+    data = cps_info[offset:]
     end = data.find("oki")
     pat = re.compile("ROM_LOAD\( \"(.*?)\"")
     res = pat.findall(data[:end])
@@ -66,11 +66,11 @@ def convert_audio_cps1(name, zf, filelist, cps1_info, offset):
 
     return offset+end
 
-def convert_maincpu(name, zf, filelist, cps1_info):
+def convert_maincpu(name, zf, filelist, cps_info):
     cpu_files = []
     s = "ROM_START( " + name + " )"
-    begin = cps1_info.find(s)
-    data = cps1_info[begin:]
+    begin = cps_info.find(s)
+    data = cps_info[begin:]
     end = data.find("gfx")
     pat = re.compile("ROM_LOAD16_(.*?),")
     res = pat.findall(data[:end])
@@ -162,7 +162,7 @@ def unshuffle(cps_gfx, idx, length):
         cps_gfx[pos1: pos1 + 8], cps_gfx[pos2: pos2 + 8] = \
             cps_gfx[pos2: pos2 + 8], cps_gfx[pos1: pos1 + 8]
 
-def convert_gfx(name, zf, filelist, cps_info, machine, offset):
+def convert_gfx(name, zf, filelist, cps_info, offset, machine):
     gfx_files = []
     data = cps_info[offset:]
     end = data.find("audiocpu")
@@ -248,7 +248,7 @@ def convert_cps2(name, zf, filelist, cps_info):
     print("[+] maincpu converted")
 
     print("Converting gfx...")
-    offset = convert_gfx(name, zf, filelist, cps_info, "CPS2", offset)
+    offset = convert_gfx(name, zf, filelist, cps_info, offset, "CPS2")
     print("[+] gfx converted")
 
     print("Converting audio...")
@@ -265,7 +265,7 @@ def convert_cps1(name, zf, filelist, cps_info):
     print("[+] maincpu converted")
 
     print("Converting gfx...")
-    offset = convert_gfx(name, zf, filelist, cps_info, "CPS1", offset)
+    offset = convert_gfx(name, zf, filelist, cps_info, offset, "CPS1")
     print("[+] gfx converted")
 
     print("Converting audio...")
@@ -277,27 +277,34 @@ def convert_cps1(name, zf, filelist, cps_info):
     print("[+] audio samples extracted")
 
 def usage():
-    print("Usage : %s [romfile] [machine]" % sys.argv[0])
+    print("Usage : %s [romfile]" % sys.argv[0])
     sys.exit(0)
 
 def main(argc, argv):
-    if argc != 3:
+    if argc != 2:
         usage()
 
     zipped_rom = argv[1]
     zf = zipfile.ZipFile(zipped_rom)
     filelist = zf.infolist()
-    if argv[2] == "cps1":
+    name = zipped_rom[:-4]
+
+    for i in range(1,4):
+        cps_info = open('cps%d.cpp' % i, 'r').read()
+        s = "ROM_START( " + name + " )"
+        if cps_info.find(s) > 0:
+           machine = "CPS%d" % i
+    if machine == "CPS1":
         cps_info = open('cps1.cpp', 'r').read()
-        convert_cps1(zipped_rom[:-4], zf, filelist, cps_info)
-    elif argv[2] == "cps2":
+        convert_cps1(name, zf, filelist, cps_info)
+    elif machine == "CPS2":
         cps_info = open('cps2.cpp', 'r').read()
-        convert_cps2(zipped_rom[:-4], zf, filelist, cps_info)
-    elif argv[2] == "cps3":
-        print("[-] not suppported yet")
-        sys.exit(0)
+        convert_cps2(name, zf, filelist, cps_info)
+    elif machine == "CPS3":
+        cps_info = open('cps3.cpp', 'r').read()
+        convert_cps3(name, zf, filelist, cps_info)
     else:
-        usage()
+        print("Could not find %s in cps info files." % name)
 
 if __name__ == "__main__":
     main(len(sys.argv), sys.argv)
