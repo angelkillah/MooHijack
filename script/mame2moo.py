@@ -3,6 +3,19 @@
 import zipfile
 import sys
 import re
+import os
+import subprocess
+
+cps2_keys = {}
+cps2_keys["sfa2ur1"] = "0x1bbf3d96 0x8af4614a"
+cps2_keys["vsav"] = "0xe0cd5881 0x71babb70"
+cps2_keys["xmcota"] = "0x3bc6eda4 0x97f80251"
+cps2_keys["sfa3u"] = "0xe7bbf0e5 0x67943248"nr
+cps2_keys["ringdest"] = "0x19940727 0x17444903"
+cps2_keys["msh"] = "0x1a11ee26 0xe7955d17"
+cps2_keys["dstlk"] = "0x13d8a7a8 0x0008b090"
+cps2_keys["megamn2d"] = "0x50501cac 0xed346550"
+cps2_keys["1944"] = "0x1d3e724c 0x8b59fc7a"
 
 def convert_audio_samples_cps2(name, zf, filelist, cps_info, offset):
     data = cps_info[offset:]
@@ -66,6 +79,27 @@ def convert_audio_cps1(name, zf, filelist, cps_info, offset):
 
     return offset+end
 
+def decrypt_maincpu(name, zf, filelist, cps_info):
+    cpu_files = []
+    s = "ROM_START( " + name
+    begin = cps_info.find(s)
+    data = cps_info[begin:]
+    end = data.find("gfx")
+    pat = re.compile("ROM_LOAD16_(.*?),")
+    res = pat.findall(data[:end])
+    nb_cpu_files = len(res)
+    data = ""
+    
+    # concat all sample files
+    for n in range(nb_cpu_files):
+        filename = re.search('\"(.*)\"', res[n]).group(0)[1:-1]
+        print(filename)
+        data += zf.read(filename)
+    open('rom.tmp', 'wb').write(data)
+    f = open('rom.68y', 'w')
+    print(name)
+    subprocess.Popen(["rahash2", "-D", "cps2", "-S", cps2_keys[name], "rom.tmp"], stdout=f)
+    
 def convert_maincpu(name, zf, filelist, cps_info):
     cpu_files = []
     s = "ROM_START( " + name + " )"
@@ -243,6 +277,10 @@ def convert_cps3(name, zf, filelist, cps_info):
     print("[+] game data converted")
 
 def convert_cps2(name, zf, filelist, cps_info):
+    print("Decrypting maincpu...")
+    decrypt_maincpu(name, zf, filelist, cps_info)
+    print("[+] maincpu decrypted")
+    
     print("Converting maincpu...")
     offset = convert_maincpu(name, zf, filelist, cps_info)
     print("[+] maincpu converted")
@@ -258,6 +296,8 @@ def convert_cps2(name, zf, filelist, cps_info):
     print("Converting qsound samples..")
     convert_audio_samples_cps2(name, zf, filelist, cps_info, offset)
     print("[+] qsound samples extracted")
+    
+    os.remove('rom.tmp')
 
 def convert_cps1(name, zf, filelist, cps_info):
     print("Converting maincpu...")

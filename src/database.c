@@ -1,7 +1,7 @@
 #include "database.h"
 
 void DB_Init()
-{	
+{
 	// init CPSB
 	const CPSB_INFO CPS_B_01 = { 0x989680, 0x00, 0x26, 0x30, {0x28, 0x2a, 0x2c, 0x2e }, { 0, 0, 0, 0 }, 0, 0, { 0x02, 0x04, 0x08, 0x30, 0x30 } };
 	const CPSB_INFO CPS_B_02 = { 0x989680, 0x20, 0x2c, 0x22,{ 0x2a, 0x28, 0x26, 0x24 }, { 0, 0, 0, 0 }, 0, 0,{ 0x02, 0x04, 0x08, 0x00, 0x00 } };
@@ -16,32 +16,32 @@ void DB_Init()
 	const CPSB_INFO CPS_B_21_QS4 = { 0xB71B00, 0x2e, 0x16, 0x2c, { 0x00, 0x02, 0x28, 0x2a }, { 0, 0, 0, 0 }, 0x00, 0x0c01, { 0x04, 0x08, 0x10, 0x00, 0x00 } };
 
 	// init mappers
-	const MAPPER_GFX MAPPER_S224B  = { { 0, 0x43ff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x4400, 0x4bff, 0, 0x7fff, 0xFFFFFFFF, 0x6000, 0x7fff, 0, 0x7fff, 0xffffffff, 0x4c00, 0x5fff, 0, 0x7fff, 0xffffffff } };
-	const MAPPER_GFX MAPPER_AR24B  = { { 0, 0x2fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x3000, 0x3fff, 0, 0x7fff, 0xFFFFFFFF, 0x4000, 0x5fff, 0, 0x7fff, 0xffffffff, 0x6000, 0x7fff, 0, 0x7fff, 0xffffffff } };
-	const MAPPER_GFX MAPPER_CK24B  = { { 0, 0x2fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x3000, 0x3fff, 0, 0x7fff, 0xFFFFFFFF, 0x4000, 0x6fff, 0, 0x7fff, 0xffffffff, 0x7000, 0x7fff, 0, 0x7fff, 0xffffffff } };
-	const MAPPER_GFX MAPPER_MS24B  = { { 0, 0x3fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x4000, 0x4fff, 0, 0x7fff, 0xFFFFFFFF, 0x5000, 0x6fff, 0, 0x7fff, 0xffffffff, 0x7000, 0x7fff, 0, 0x7fff, 0xffffffff } };
+	const MAPPER_GFX MAPPER_S224B = { { 0, 0x43ff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x4400, 0x4bff, 0, 0x7fff, 0xFFFFFFFF, 0x6000, 0x7fff, 0, 0x7fff, 0xffffffff, 0x4c00, 0x5fff, 0, 0x7fff, 0xffffffff } };
+	const MAPPER_GFX MAPPER_AR24B = { { 0, 0x2fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x3000, 0x3fff, 0, 0x7fff, 0xFFFFFFFF, 0x4000, 0x5fff, 0, 0x7fff, 0xffffffff, 0x6000, 0x7fff, 0, 0x7fff, 0xffffffff } };
+	const MAPPER_GFX MAPPER_CK24B = { { 0, 0x2fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x3000, 0x3fff, 0, 0x7fff, 0xFFFFFFFF, 0x4000, 0x6fff, 0, 0x7fff, 0xffffffff, 0x7000, 0x7fff, 0, 0x7fff, 0xffffffff } };
+	const MAPPER_GFX MAPPER_MS24B = { { 0, 0x3fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x4000, 0x4fff, 0, 0x7fff, 0xFFFFFFFF, 0x5000, 0x6fff, 0, 0x7fff, 0xffffffff, 0x7000, 0x7fff, 0, 0x7fff, 0xffffffff } };
 	const MAPPER_GFX MAPPER_S9263B = { { 0, 0x7fff, 0, 0x7fff, 0x8000, 0xffff, 0x8000, 0x7fff, 0x10000, 0x11fff, 0x10000, 0x7fff}, 0xffffffff, {0x4000, 0x4fff, 0x10000, 0x7fff, 0xffffffff, 0x5000, 0x7fff, 0x10000, 0x7fff, 0xffffffff, 0x2000, 0x3fff, 0x10000, 0x7fff, 0xffffffff} };
 	const MAPPER_GFX MAPPER_ST24B2 = { { 0, 0x4fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x7000, 0x7fff, 0x8000, 0x7fff, 0xffffffff, 0x4000, 0x7fff, 0, 0x7fff, 0xffffffff, 0, 0x7fff, 0x8000, 0x7fff, 0xffffffff } };
-	
+
 	// TODO : fix GFXTYPE_SCROLL2 & GFXTYPE_SCROLL3
 	const MAPPER_GFX MAPPER_TK22B = { { 0, 0x3fff, 0, 0x3fff, 0x4000, 0x5fff, 0x4000, 0x3fff, 0, 0, 0, 0 }, 0xFFFFFFFF,{ 0x6000, 0x7fff, 0x4000, 0x3fff, 0xffffffff, 0, 0, 0, 0, 0xffffffff, 0, 0, 0, 0, 0xffffffff } };
 
 	// TODO : fix GFXTYPE_SCROLL2
-	const MAPPER_GFX MAPPER_WL24B  = { { 0, 0x4fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x7000, 0x7fff, 0, 0x7fff, 0xffffffff, 0, 0x3fff, 0, 0x3fff, 0xffffffff, 0x5000, 0x6fff, 0, 0x7fff, 0xffffffff } };
-	
+	const MAPPER_GFX MAPPER_WL24B = { { 0, 0x4fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xFFFFFFFF, { 0x7000, 0x7fff, 0, 0x7fff, 0xffffffff, 0, 0x3fff, 0, 0x3fff, 0xffffffff, 0x5000, 0x6fff, 0, 0x7fff, 0xffffffff } };
+
 	// TODO : fix GFXTYPE_SCROLLXX?
-	const MAPPER_GFX MAPPER_LWCHR  = { { 0, 0x7fff, 0, 0x1ffff, 0, 0, 0, 0, 0, 0, 0, 0}, 0xFFFFFFFF, { 0, 0x1ffff, 0, 0x1ffff, 0xffffffff, 0, 0x1ffff, 0x8000, 0x1ffff, 0xffffffff, 0, 0x1ffff, 0x8000, 0x1ffff, 0xffffffff } };
+	const MAPPER_GFX MAPPER_LWCHR = { { 0, 0x7fff, 0, 0x1ffff, 0, 0, 0, 0, 0, 0, 0, 0}, 0xFFFFFFFF, { 0, 0x1ffff, 0, 0x1ffff, 0xffffffff, 0, 0x1ffff, 0x8000, 0x1ffff, 0xffffffff, 0, 0x1ffff, 0x8000, 0x1ffff, 0xffffffff } };
 
 	// TODO : fix 2nd GFXTYPE_SPRITES
 	const MAPPER_GFX MAPPER_DAM63B = { { 0, 0x1fff, 0, 0x7fff, 0, 0, 0, 0, 0, 0, 0, 0 }, 0xffffffff, { 0x2000, 0x2fff, 0, 0x7fff, 0xffffffff, 0x4000, 0x7fff, 0, 0x7fff, 0xffffffff, 0, 0x1ffff, 0, 0x1ffff, 0xffffffff} };
 
 	// init game list
-	GameList[0] = (GAME_LIST) { { CPS_B_04, MAPPER_S224B }, { .RomsInfoCPS1 = { 0x100000, 0x200000, 0x40000, 0x10000, 0x5ca18 } }, CPS1, TRUE, 0, "Final Fight", "319FE0E70F1D80F9500CFDFEE307C9C31FD7E189" };
-	GameList[1] = (GAME_LIST) { { CPS_B_11, MAPPER_AR24B }, { .RomsInfoCPS1 = { 0x100000, 0x200000, 0x20000, 0x10000, 0x10cf4 } }, CPS1, TRUE, 0, "U.N. Squadron", "B2E4AFC2B430D443677F8E3F70C1776A743BDDBC" };
-	GameList[2] = (GAME_LIST) { { CPS_B_14, MAPPER_CK24B }, { .RomsInfoCPS1 = { 0x100000, 0x200000, 0x40000, 0x10000, 0x76dcf } }, CPS1, TRUE, 0, "Mega Twins", "F9873BA905AC1B535F6764FA8B38D0A2B90F4169" };
-	GameList[3] = (GAME_LIST) { { CPS_B_13, MAPPER_MS24B }, { .RomsInfoCPS1 = { 0x100000, 0x200000, 0x40000, 0x10000, 0x2808d } }, CPS1, TRUE, 0, "Magic Sword: Heroic Fantasy", "E9384AB2E9D31C9BFFA6E90D2E885F66B66B567F" };
-	GameList[4] = (GAME_LIST) { { CPS_B_21_DEF, MAPPER_DAM63B }, { .RomsInfoCPS1 = { 0x100000, 0x400000, 0, 0x20000, 0x8088d } }, CPS1, FALSE, 0x646, "Daimakaimura", "A410EE986F5F3019FEF4D4A011C90045D287C8F4" };
-	GameList[5] = (GAME_LIST) { { CPS_B_21_DEF, MAPPER_S9263B }, { .RomsInfoCPS1 = { 0x180000, 0x600000, 0x40000, 0x10000, 0x1dfc1 } }, CPS1, TRUE, 0, "Street Fighter 2 Champion Edition", "81A280073FA46A3EC33B97052ABB729BBA783B0C" };
-	GameList[6] = (GAME_LIST) { { CPS_B_01, MAPPER_ST24B2 }, { .RomsInfoCPS1 = { 0x100000, 0x400000, 0x40000, 0x10000, 0xc3157 } }, CPS1, FALSE, 0xc56, "Striders", "32E613AE3E3D28E85461C22D1C7527E2AACD728E" };
-	GameList[7] = (GAME_LIST) { {0}, { .RomsInfoCPS2 = { 0x300000, 0x100000, 0x1400000, 0x400000, 0x40000, 0x80, 0x26cbd} }, CPS2, TRUE, 0, "Street Fighter Alpha 2", "9E49D83D2BB957EBCD2380D20BDF6067825BE832" };
-} 
+	GameList[0] = (GAME_LIST){ { CPS_B_04, MAPPER_S224B }, {.RomsInfoCPS1 = { 0x100000, 0x200000, 0x40000, 0x10000, 0x5ca18 } }, CPS1, TRUE, 0, {"game_0", '2'}, "Final Fight", "319FE0E70F1D80F9500CFDFEE307C9C31FD7E189" };
+	GameList[1] = (GAME_LIST){ { CPS_B_11, MAPPER_AR24B }, {.RomsInfoCPS1 = { 0x100000, 0x200000, 0x20000, 0x10000, 0x10cf4 } }, CPS1, TRUE, 0, {"game_0", '6'}, "U.N. Squadron", "B2E4AFC2B430D443677F8E3F70C1776A743BDDBC" };
+	GameList[2] = (GAME_LIST){ { CPS_B_14, MAPPER_CK24B }, {.RomsInfoCPS1 = { 0x100000, 0x200000, 0x40000, 0x10000, 0x76dcf } }, CPS1, TRUE, 0, {"game_0", '5'}, "Mega Twins", "F9873BA905AC1B535F6764FA8B38D0A2B90F4169" };
+	GameList[3] = (GAME_LIST){ { CPS_B_13, MAPPER_MS24B }, {.RomsInfoCPS1 = { 0x100000, 0x200000, 0x40000, 0x10000, 0x2808d } }, CPS1, TRUE, 0, {"game_0", '4'}, "Magic Sword: Heroic Fantasy", "E9384AB2E9D31C9BFFA6E90D2E885F66B66B567F" };
+	GameList[4] = (GAME_LIST){ { CPS_B_21_DEF, MAPPER_DAM63B }, {.RomsInfoCPS1 = { 0x100000, 0x400000, 0, 0x20000, 0x8088d } }, CPS1, FALSE, 0x646, {0}, "Daimakaimura", "A410EE986F5F3019FEF4D4A011C90045D287C8F4" };
+	GameList[5] = (GAME_LIST){ { CPS_B_21_DEF, MAPPER_S9263B }, {.RomsInfoCPS1 = { 0x180000, 0x600000, 0x40000, 0x10000, 0x1dfc1 } }, CPS1, TRUE, 0, {"game_0", '3'}, "Street Fighter 2 Champion Edition", "81A280073FA46A3EC33B97052ABB729BBA783B0C" };
+	GameList[6] = (GAME_LIST){ { CPS_B_01, MAPPER_ST24B2 }, {.RomsInfoCPS1 = { 0x100000, 0x400000, 0x40000, 0x10000, 0xc3157 } }, CPS1, FALSE, 0xc56, {0}, "Striders", "32E613AE3E3D28E85461C22D1C7527E2AACD728E" };
+	GameList[7] = (GAME_LIST){ {0}, {.RomsInfoCPS2 = { 0x300000, 0x100000, 0x1400000, 0x400000, 0x40000, 0x80, 0x26cbd} }, CPS2, TRUE, 0, {"game_2", '2'}, "Street Fighter Alpha 2", "9E49D83D2BB957EBCD2380D20BDF6067825BE832" };
+}

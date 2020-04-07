@@ -37,10 +37,12 @@
 #define SFA2_ID					7
 #define SFA3_ID					8
 
+#define SSF2X_PATCHED_ONLINE_ID		'2'
+
 #define OFFSET_PATCH_COINS			0x220CF6   // patch number of coins in memory 
 
-int	OFFSET_LOAD_STATE  = 0x1CFE30;
-int OFFSET_CPS1		   = 0x2BD520;
+int	OFFSET_LOAD_STATE = 0x1CFE30;
+int OFFSET_CPS1 = 0x2BD520;
 
 #define OFFSET_CLOCK				OFFSET_CPS1 + 8
 #define OFFSET_CPSB					OFFSET_CLOCK + 8	
@@ -65,10 +67,20 @@ int OFFSET_GETDATA = 0x14827A;
 int OFFSET_CPS1_CODE_TO_PATCH = 0x1A9E55;
 int OFFSET_SWITCH_GAMES = 0x1CEFE;
 
+int OFFSET_SPECTATOR_MODE = 0x4E962;
+PCHAR patchSpectator = "\xb0\x01\x90\x90\x90\x90\x90";
+
+int OFFSET_TRAINING_ALPHA2 = 0x1AB740;
+int OFFSET_TRAINING_SF2CE = 0x1A5F95;
+
+int OFFSET_GAME_VERSION = 0x2471D0;
+int OFFSET_CREATE_LOBBY = 0x223A4; 
+int OFFSET_FIND_LOBBY = 0x4D08D0;
+
 PVOID VEHhandler;
 
-PVOID Orig_GetSize, Orig_GetData, Orig_PatchCoins, Orig_SwitchGames;
-BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchCoins, OrigByte_SwitchGames;
+PVOID Orig_GetSize, Orig_GetData, Orig_PatchCoins, Orig_SwitchGames, Orig_CreateLobby, Orig_FindLobby;
+BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_PatchCoins, OrigByte_SwitchGames, OrigByte_CreateLobby, OrigByte_FindLobby;
 BYTE int3[] = "\xcc";
 
 DWORD dwDataSize = 0;
@@ -79,7 +91,7 @@ VOID __declspec(dllexport) _()
 {
 }
 
-PVOID GetGameBaseAddress()
+PVOID GetModuleBaseAddress(PWCHAR moduleName)
 {
 	HMODULE hModules[MAX_MODULES];
 	MODULEINFO ModuleInfo = { 0 };
@@ -87,8 +99,8 @@ PVOID GetGameBaseAddress()
 
 	HANDLE hCurrentProcess = GetCurrentProcess();
 
-	while(1)
-	{ 
+	while (1)
+	{
 		if (EnumProcessModules(hCurrentProcess, hModules, sizeof(hModules), &dwBytesNeeded))
 		{
 			for (i = 0; i < (dwBytesNeeded / sizeof(HMODULE)); i++)
@@ -97,7 +109,7 @@ PVOID GetGameBaseAddress()
 				if (GetModuleFileNameEx(hCurrentProcess, hModules[i], szModName,
 					sizeof(szModName) / sizeof(TCHAR)))
 				{
-					if (wcsstr(szModName, L"SF30") != NULL)
+					if (wcsstr(szModName, moduleName) != NULL)
 					{
 						if (GetModuleInformation(hCurrentProcess, hModules[i], &ModuleInfo, sizeof(ModuleInfo)) == TRUE)
 							return ModuleInfo.lpBaseOfDll;
@@ -120,30 +132,30 @@ VOID PatchCoins(PVOID CoinAddr)
 VOID PatchCPS1GameSettings(PVOID GameBaseAddress)
 {
 	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_CLOCK), (PCHAR)&GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwCpuClockRate, sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_CPSB), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwCPSB), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_CTRL), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwCtrl), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PALCTRL), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPalctrl), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[0]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 8), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[1]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 16), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[2]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 24), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[3]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[0]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 8), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[1]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 16), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[2]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 24), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[3]), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_IN2), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwIn2), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_ID), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwID), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_LAYER_MASK), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwLayerEnableMask), sizeof(DWORD)*5);
-	
-	PVOID GFXMapper = *(PVOID*)((LPBYTE)GameBaseAddress + OFFSET_GFX_MAPPER);	
-	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SPRITES), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxSpritesInfo), sizeof(GFX_SPRITES) * 3);
-	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SPRITES_END), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.dwGfxSpritesEndMarker), sizeof(DWORD));
-	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL1), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[0]), sizeof(GFX_SCROLL));
-	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL2), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[1]), sizeof(GFX_SCROLL));
-	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL3), (PCHAR)&(GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[2]), sizeof(GFX_SCROLL));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_CPSB), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwCPSB), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_CTRL), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwCtrl), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PALCTRL), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPalctrl), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[0]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 8), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[1]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 16), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[2]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_PRIORITY_MASK + 24), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwPriorityMask[3]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[0]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 8), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[1]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 16), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[2]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_MULTIPLY_PROTECTION + 24), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwMultiplyProtection[3]), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_IN2), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwIn2), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_ID), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwID), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GameBaseAddress + OFFSET_LAYER_MASK), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.CpsbInfo.dwLayerEnableMask), sizeof(DWORD) * 5);
+
+	PVOID GFXMapper = *(PVOID*)((LPBYTE)GameBaseAddress + OFFSET_GFX_MAPPER);
+	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SPRITES), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxSpritesInfo), sizeof(GFX_SPRITES) * 3);
+	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SPRITES_END), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.MapperGfx.dwGfxSpritesEndMarker), sizeof(DWORD));
+	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL1), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[0]), sizeof(GFX_SCROLL));
+	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL2), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[1]), sizeof(GFX_SCROLL));
+	memcpy((PVOID)((LPBYTE)GFXMapper + OFFSET_GFX_SCROLL3), (PCHAR) & (GameList[dwCurrentGameID].GameInfo.MapperGfx.GfxScrollInfo[2]), sizeof(GFX_SCROLL));
 }
 
-VOID InstallHook(PVOID addr, BYTE *bOrig)
+VOID InstallHook(PVOID addr, BYTE* bOrig)
 {
 	DWORD dwOldProtect;
 	VirtualProtect(addr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -179,11 +191,44 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(pExceptionAddr, &OrigByte_PatchCoins, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
-		else if (pExceptionAddr == Orig_SwitchGames)
+		else if (pExceptionAddr == Orig_CreateLobby)
+		{		
+			// SSF2X 
+			if ((strcmpi(ExceptionInfo->ContextRecord->R8, "game_1") == 0) && (strcmpi(ExceptionInfo->ContextRecord->R9, "1") == 0))
+				*(PVOID*)((LPBYTE)ExceptionInfo->ContextRecord->R9) = SSF2X_PATCHED_ONLINE_ID;
+		
+			// patch others games ID
+			if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].OnlineInfo.Slot))
+			{
+				if ((strcmpi(ExceptionInfo->ContextRecord->R8, GameList[dwCurrentGameID].OnlineInfo.Slot) == 0) && (strcmpi(ExceptionInfo->ContextRecord->R9, "1") == 0))
+					*(PVOID*)((LPBYTE)ExceptionInfo->ContextRecord->R9) = GameList[dwCurrentGameID].OnlineInfo.Id;
+			}
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_CreateLobby, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_FindLobby)
+		{
+			// SSF2X
+			if (strcmpi(ExceptionInfo->ContextRecord->Rdx, "game_1") == 0)
+				ExceptionInfo->ContextRecord->R8 = SSF2X_PATCHED_ONLINE_ID - '0';
+
+			// patch others games ID
+			if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].OnlineInfo.Slot))
+			{
+				if (strcmpi(ExceptionInfo->ContextRecord->Rdx, GameList[dwCurrentGameID].OnlineInfo.Slot) == 0)
+					ExceptionInfo->ContextRecord->R8 = GameList[dwCurrentGameID].OnlineInfo.Id - '0';
+			}
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_FindLobby, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+
+		}
+		else if ((pExceptionAddr == Orig_SwitchGames) && (dwCurrentGameID != -1))
 		{
 			if (ExceptionInfo->ContextRecord->Rax == SF2HF_ID) // CPS1
 			{
-				if(strcmp(GameList[dwCurrentGameID].Name, "Street Fighter 2 Champion Edition") == 0)
+				if (strcmp(GameList[dwCurrentGameID].Name, "Street Fighter 2 Champion Edition") == 0)
 					ExceptionInfo->ContextRecord->Rax = SF2CE_ID;
 			}
 			else if (ExceptionInfo->ContextRecord->Rax == SFA3_ID) // CPS2
@@ -275,7 +320,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(pExceptionAddr, &OrigByte_GetSize, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
-		else if(pExceptionAddr == Orig_GetData)
+		else if (pExceptionAddr == Orig_GetData)
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(pExceptionAddr, &OrigByte_GetData, 1);
@@ -284,12 +329,24 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 		ExceptionInfo->ContextRecord->EFlags |= 0x100;
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
-	else if (dwExceptionCode == STATUS_SINGLE_STEP) 
+	else if (dwExceptionCode == STATUS_SINGLE_STEP)
 	{
 		if ((pExceptionAddr == (PVOID)((LPBYTE)Orig_PatchCoins + 4)) && (bPatchCoinsApplied == FALSE))
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(Orig_PatchCoins, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_CreateLobby + 3))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_CreateLobby, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_FindLobby + 5))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_FindLobby, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_SwitchGames + 3))
@@ -393,7 +450,7 @@ INT GetGameInfo(PBYTE hash)
 		{
 			for (j = 0; j < SHA1_HASH_SIZE; j++)
 				sscanf_s(GameList[i].Hash + 2 * j, "%02x", &dbHash[j]);
-			
+
 			if (memcmp(hash, dbHash, SHA1_HASH_SIZE) == 0)
 				return i;
 		}
@@ -433,7 +490,7 @@ INT CheckROM()
 	HANDLE hFile;
 	DWORD dwBytesRead, dwFileSize;
 	PBYTE buf = NULL;
-	BYTE hash[SHA1_HASH_SIZE]; 
+	BYTE hash[SHA1_HASH_SIZE];
 
 	if ((hFile = CreateFileA(PATH_68K_FILE, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
 		return -1;
@@ -444,7 +501,7 @@ INT CheckROM()
 		exit(EXIT_FAILURE);
 	ReadFile(hFile, buf, dwFileSize, &dwBytesRead, NULL);
 	CloseHandle(hFile);
-	
+
 	HashSHA1(buf, dwFileSize, hash);
 	dwCurrentGameID = GetGameInfo(hash);
 	free(buf);
@@ -455,11 +512,10 @@ INT CheckROM()
 DWORD WINAPI Payload(LPVOID lpParameter)
 {
 	DWORD dwOldProtect;
-	PVOID GameBaseAddr = GetGameBaseAddress();
-	PVOID AddrToPatch = NULL;
-	
+	PVOID GameBaseAddr = GetModuleBaseAddress(L"SF30");
+
 	DB_Init();
-	
+
 	// fix offsets for international version
 	if (IsEuroVersion() == FALSE)
 	{
@@ -469,55 +525,75 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_GETDATA = 0x14883A;
 		OFFSET_CPS1_CODE_TO_PATCH = 0x1AEE05;
 		OFFSET_SWITCH_GAMES = 0x1D274;
+		OFFSET_SPECTATOR_MODE = 0x4EE1C;
+		OFFSET_TRAINING_ALPHA2 = 0x1B6B50;
+		OFFSET_TRAINING_SF2CE = 0x1AAF45;
+		OFFSET_CREATE_LOBBY = 0x227F4;
+		OFFSET_GAME_VERSION = 0x248C10;
+		
+		patchSpectator = "\xb0\x01\x90\x90\x90\x90";
 	}
-	
-	if (CheckROM() == -1)
-		return 1;
-	
+
+	dwCurrentGameID = CheckROM();
+
 	Sleep(2000);
 
+	// patch to automatically set the spectator mode
+	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator);
+
+	// basic training mode for alpha 2 
+	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2, "\x90\x90");
+	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2 + 0x25, "\x90\x90");
+	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2 + 0x50, "\x90\x90\x90\x90\x90\x90\x41\xB8\x90\x00\x00\x00");
+
+	// basic training mode for sf2ce
+	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE, "\x90\x90");
+	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE + 0x25, "\x90\x90");
+	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE + 0x30, "\x90\x90\x90\x90\x90\x90\x41\xB8\x90\x00\x00\x00");
+
+	// game version (for online)
+	PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x70\x61\x74\x63\x68\x65\x64\x00");
+
+	// additional game to be load
 	if (dwCurrentGameID != -1)
 	{
-		//MessageBoxA(NULL, GameList[dwCurrentGameID].Name, "game found", MB_OK);
 		if (GameList[dwCurrentGameID].System == CPS1)
+		{
 			PatchCPS1GameSettings(GameBaseAddr);
+			
+			// patch code (additional gfx map used by Moo)
+			PatchInMemory(GameBaseAddr, OFFSET_CPS1_CODE_TO_PATCH, "\xb0\x01\x90\x90");
+
+			// patch load state
+			if (GameList[dwCurrentGameID].CoinOffset)
+				PatchInMemory(GameBaseAddr, OFFSET_LOAD_STATE, "\xc3");
+		}
 		bIsMulti = IsMulti();
 	}
 
 	// install VEH handler
 	if ((VEHhandler = AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)ExceptionHandler)) == NULL)
 		return 0;
-	
-	if (GameList[dwCurrentGameID].System == CPS1)
-	{
-		// patch code (additional gfx map used by Moo)
-		AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_CODE_TO_PATCH);
-		VirtualProtect(AddrToPatch, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-		memcpy(AddrToPatch, "\xb0\x01\x90\x90", 4);
-		VirtualProtect(AddrToPatch, 4, dwOldProtect, &dwOldProtect);
-
-		// patch load state
-		if (dwCurrentGameID != -1)
-		{
-			if (GameList[dwCurrentGameID].CoinOffset)
-			{
-				AddrToPatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_LOAD_STATE);
-				VirtualProtect(AddrToPatch, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-				memcpy(AddrToPatch, "\xc3", 1);
-				VirtualProtect(AddrToPatch, 1, dwOldProtect, &dwOldProtect);
-			}
-		}
-	}
 
 	Orig_GetSize = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETSIZE);
 	Orig_GetData = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_GETDATA);
 	Orig_PatchCoins = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_PATCH_COINS);
 	Orig_SwitchGames = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SWITCH_GAMES);
+	Orig_CreateLobby = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CREATE_LOBBY);
+	
+	PVOID SteamClientBase = GetModuleBaseAddress(L"steamclient64");
+	Orig_FindLobby = (PVOID)((LPBYTE)SteamClientBase + OFFSET_FIND_LOBBY);
 
-	InstallHook(Orig_GetSize, &OrigByte_GetSize);
-	InstallHook(Orig_GetData, &OrigByte_GetData);
-	InstallHook(Orig_SwitchGames, &OrigByte_SwitchGames);
+	InstallHook(Orig_CreateLobby, &OrigByte_CreateLobby);
+	InstallHook(Orig_FindLobby, &OrigByte_FindLobby);
 
+	// additional game to be load
+	if (dwCurrentGameID != -1)
+	{
+		InstallHook(Orig_GetSize, &OrigByte_GetSize);
+		InstallHook(Orig_GetData, &OrigByte_GetData);
+		InstallHook(Orig_SwitchGames, &OrigByte_SwitchGames);
+	}
 	return 1;
 }
 BOOL APIENTRY DllMain(

@@ -64,6 +64,10 @@ typedef struct _ROMS_INFO_CPS2 {
 	DWORD	dwLogoSize;
 } ROMS_INFO_CPS2;
 
+typedef struct _ONLINE_INFO {
+	PCHAR Slot;
+	CHAR  Id;
+} ONLINE_INFO;
 
 typedef struct _GAME_LIST {
 	GAME_INFO       GameInfo;
@@ -74,6 +78,7 @@ typedef struct _GAME_LIST {
 	SYSTEM			System;
 	BOOL			bIsMulti;
 	WORD			CoinOffset;
+	ONLINE_INFO     OnlineInfo;
 	PCHAR			Name;
 	PCHAR			Hash;
 } GAME_LIST;

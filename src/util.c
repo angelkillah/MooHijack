@@ -16,12 +16,22 @@ VOID PatchGameData(PVOID GameData, DWORD dwDataSize, PCHAR pPathFile)
 	}
 }
 
+VOID PatchInMemory(PVOID Addr, INT Offset, PCHAR Data)
+{
+	PVOID AddrToPatch = NULL;
+	DWORD dwOldProtect;
+	AddrToPatch = (PVOID)((LPBYTE)Addr + Offset);
+	VirtualProtect(AddrToPatch, strlen(Data), PAGE_EXECUTE_READWRITE, &dwOldProtect);
+	memcpy(AddrToPatch, Data, strlen(Data));
+	VirtualProtect(AddrToPatch, strlen(Data), dwOldProtect, &dwOldProtect);
+}
+
 VOID HashSHA1(PBYTE pData, DWORD dwDataLen, PBYTE pHash)
 {
 	HCRYPTPROV hProv = 0;
 	HCRYPTHASH hHash = 0;
 	DWORD dwSize = SHA1_HASH_SIZE;
-	
+
 	if (CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) == 0)
 		goto clean;
 
@@ -34,8 +44,8 @@ VOID HashSHA1(PBYTE pData, DWORD dwDataLen, PBYTE pHash)
 		goto clean;
 
 clean:
-	if(hHash)
+	if (hHash)
 		CryptDestroyHash(hHash);
-	if(hProv)
+	if (hProv)
 		CryptReleaseContext(hProv, 0);
 }
