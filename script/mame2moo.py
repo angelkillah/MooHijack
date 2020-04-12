@@ -8,14 +8,16 @@ import subprocess
 
 cps2_keys = {}
 cps2_keys["sfa2ur1"] = "0x1bbf3d96 0x8af4614a"
-cps2_keys["vsav"] = "0xe0cd5881 0x71babb70"
+cps2_keys["vsavj"] = "0xfa8f4e33 0xa4b881b9"
 cps2_keys["xmcota"] = "0x3bc6eda4 0x97f80251"
-cps2_keys["sfa3u"] = "0xe7bbf0e5 0x67943248"nr
+cps2_keys["sfa3u"] = "0xe7bbf0e5 0x67943248"
 cps2_keys["ringdest"] = "0x19940727 0x17444903"
 cps2_keys["msh"] = "0x1a11ee26 0xe7955d17"
 cps2_keys["dstlk"] = "0x13d8a7a8 0x0008b090"
 cps2_keys["megamn2d"] = "0x50501cac 0xed346550"
 cps2_keys["1944"] = "0x1d3e724c 0x8b59fc7a"
+cps2_keys["hsf2"] = "5a369ddd fea3189c"
+cps2_keys["ssf2u"] = "0x12345678 0x9abcdef0"
 
 def convert_audio_samples_cps2(name, zf, filelist, cps_info, offset):
     data = cps_info[offset:]
