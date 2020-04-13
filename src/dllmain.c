@@ -45,6 +45,7 @@
 #define SFA2_ID					7
 #define SFA3_ID					8
 #define SSF2_ID					4
+#define SSF2X_ID				5
 
 #define SSF2X_PATCHED_ONLINE_ID		'2'
 
@@ -97,6 +98,7 @@ BYTE int3[] = "\xcc";
 DWORD dwDataSize = 0;
 BOOL bIsMulti = FALSE;
 BOOL bPatchCoinsApplied = FALSE;
+BOOL bDoLoadCPS2 = FALSE;
 
 VOID __declspec(dllexport) _()
 {
@@ -244,11 +246,15 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			}
 			else if (ExceptionInfo->ContextRecord->Rax == SFA3_ID) 
 			{
+				bDoLoadCPS2 = TRUE;
 				if (strcmp(GameList[dwCurrentGameID].Name, "Street Fighter Alpha 2") == 0)
 					ExceptionInfo->ContextRecord->Rax = SFA2_ID;
 				if (strcmp(GameList[dwCurrentGameID].Name, "Hyper Street Fighter II : The Anniversary Edition") == 0)
-					ExceptionInfo->ContextRecord->Rax = SSF2_ID; // avec sfa2 c'est mieux
+					ExceptionInfo->ContextRecord->Rax = SSF2_ID; 
 			}
+			else if (ExceptionInfo->ContextRecord->Rax == SSF2X_ID)
+				bDoLoadCPS2 = FALSE;
+			
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(pExceptionAddr, &OrigByte_SwitchGames, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
@@ -310,49 +316,52 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			}
 			else if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS2))
 			{
-				// Z80
-				if (ExceptionInfo->ContextRecord->Rax == SSF2_Z80_SIZE)
+				if (bDoLoadCPS2 == TRUE)
 				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwZ80Size;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwZ80Size;
-				}
-				// QS
-				if (ExceptionInfo->ContextRecord->Rax == SSF2_QS_SIZE)
-				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwQsSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwQsSize;
-				}
-				// 68k
-				if (ExceptionInfo->ContextRecord->Rax == SSF2_68K_SIZE)
-				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize;
-				}
-				// 68y
-				if (ExceptionInfo->ContextRecord->Rax == SSF2_68Y_SIZE)
-				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68ySize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68ySize;
-				}
-				// vrom
-				if (ExceptionInfo->ContextRecord->Rax == SSF2_VROM_SIZE)
-				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwVromSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwVromSize;
-				}
-				// nv
-				if (ExceptionInfo->ContextRecord->Rax == NV_SIZE)
-				{
-					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwNvSize;
-					dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwNvSize;
-				}
-				// save state (for multi)
-				if (bIsMulti)
-				{
-					if (ExceptionInfo->ContextRecord->Rax == SFA3_SAVESTATE_SIZE)
+					// Z80
+					if (ExceptionInfo->ContextRecord->Rax == SSF2_Z80_SIZE)
 					{
-						ExceptionInfo->ContextRecord->Rax = SFA3_SAVESTATE_SIZE;
-						dwDataSize = SFA3_SAVESTATE_SIZE;
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwZ80Size;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwZ80Size;
+					}
+					// QS
+					if (ExceptionInfo->ContextRecord->Rax == SSF2_QS_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwQsSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwQsSize;
+					}
+					// 68k
+					if (ExceptionInfo->ContextRecord->Rax == SSF2_68K_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize;
+					}
+					// 68y
+					if (ExceptionInfo->ContextRecord->Rax == SSF2_68Y_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68ySize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68ySize;
+					}
+					// vrom
+					if (ExceptionInfo->ContextRecord->Rax == SSF2_VROM_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwVromSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwVromSize;
+					}
+					// nv
+					if (ExceptionInfo->ContextRecord->Rax == NV_SIZE)
+					{
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwNvSize;
+						dwDataSize = GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwNvSize;
+					}
+					// save state (for multi)
+					if (bIsMulti)
+					{
+						if (ExceptionInfo->ContextRecord->Rax == SFA3_SAVESTATE_SIZE)
+						{
+							ExceptionInfo->ContextRecord->Rax = SFA3_SAVESTATE_SIZE;
+							dwDataSize = SFA3_SAVESTATE_SIZE;
+						}
 					}
 				}
 				// logo
@@ -457,48 +466,61 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			}
 			else if ((dwCurrentGameID != -1) && (GameList[dwCurrentGameID].System == CPS2))
 			{
-
-				// z80
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwZ80Size)
+				if (bDoLoadCPS2 == TRUE)
 				{
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_Z80_FILE);
-					dwDataSize = 0;
-				}
-				// QS
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwQsSize)
-				{
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_QS_FILE);
-					dwDataSize = 0;
-				}
-				// 68k / 68y
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize)
-				{
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, currentPath);
-					dwDataSize = 0;
-					currentPath = (currentPath == PATH_68K_FILE) ? PATH_68Y_FILE : PATH_68K_FILE;
-				}
-				// vrom
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwVromSize)
-				{
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_VROM_FILE);
-					dwDataSize = 0;
-				}
-				// nv
-				if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwNvSize)
-				{
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_NV_FILE);
-					dwDataSize = 0;
-				}
-				// save state (for multi)
-				if (bIsMulti)
-				{
-					if (dwDataSize == SFA3_SAVESTATE_SIZE)
+					// z80
+					if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwZ80Size)
 					{
-						// other check to ensure that current save state != 2x 
-						PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
-						if (GameData[8] != '\x44')
-							PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_SAVESTATE_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_Z80_FILE);
 						dwDataSize = 0;
+					}
+					// QS
+					if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwQsSize)
+					{
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_QS_FILE);
+						dwDataSize = 0;
+					}
+					// 68k / 68y
+					if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize)
+					{
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, currentPath);
+						dwDataSize = 0;
+						if (GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68kSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68ySize)
+							currentPath = (currentPath == PATH_68K_FILE) ? PATH_68Y_FILE : PATH_68K_FILE;
+					}
+
+					// 68y file (if size != 68k file)
+					if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dw68ySize)
+					{
+						if (currentPath == PATH_68K_FILE)
+						{
+							PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_68Y_FILE);
+							dwDataSize = 0;
+						}
+					}
+					// vrom
+					if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwVromSize)
+					{
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_VROM_FILE);
+						dwDataSize = 0;
+					}
+					// nv
+					if (dwDataSize == GameList[dwCurrentGameID].RomsInfo.RomsInfoCPS2.dwNvSize)
+					{
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_NV_FILE);
+						dwDataSize = 0;
+					}
+					// save state (for multi)
+					if (bIsMulti)
+					{
+						if (dwDataSize == SFA3_SAVESTATE_SIZE)
+						{
+							// other check to ensure that current save state != 2x 
+							PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
+							if (GameData[8] != '\x44')
+								PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, PATH_SAVESTATE_FILE);
+							dwDataSize = 0;
+						}
 					}
 				}
 				// logo
@@ -622,6 +644,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	// patch to automatically set the spectator mode
 	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator);
 
+	/*
 	// basic training mode for alpha 2 
 	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2, "\x90\x90");
 	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2 + 0x25, "\x90\x90");
@@ -631,6 +654,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE, "\x90\x90");
 	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE + 0x25, "\x90\x90");
 	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE + 0x30, "\x90\x90\x90\x90\x90\x90\x41\xB8\x90\x00\x00\x00");
+	*/
 
 	// game version (for online)
 	PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x70\x61\x74\x63\x68\x65\x64\x00");
@@ -642,7 +666,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		{
 			PatchCPS1GameSettings(GameBaseAddr);
 			
-			// patch code (additional gfx map used by Moo)
+			// patch cps1 callbacks
 			PatchInMemory(GameBaseAddr, OFFSET_CPS1_CODE_TO_PATCH, "\xb0\x01\x90\x90");
 
 			// patch load state
