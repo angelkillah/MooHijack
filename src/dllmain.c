@@ -81,9 +81,6 @@ int OFFSET_SSF2_END_MATCH_CALLBACK = 0x1B0D4A;
 int OFFSET_SPECTATOR_MODE = 0x4E962;
 PCHAR patchSpectator = "\xb0\x01\x90\x90\x90\x90\x90";
 
-int OFFSET_TRAINING_ALPHA2 = 0x1AB740;
-int OFFSET_TRAINING_SF2CE = 0x1A5F95;
-
 int OFFSET_GAME_VERSION = 0x2471D0;
 int OFFSET_CREATE_LOBBY = 0x223A4; 
 int OFFSET_FIND_LOBBY = 0x4D08D0;
@@ -627,14 +624,10 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_GETDATA = 0x14883A;
 		OFFSET_CPS1_CODE_TO_PATCH = 0x1AEE05;
 		OFFSET_SWITCH_GAMES = 0x1D274;
-		OFFSET_SPECTATOR_MODE = 0x4EE1C;
-		OFFSET_TRAINING_ALPHA2 = 0x1B6B50;
-		OFFSET_TRAINING_SF2CE = 0x1AAF45;
+		OFFSET_SPECTATOR_MODE = 0x4EE42;
 		OFFSET_CREATE_LOBBY = 0x227F4;
 		OFFSET_GAME_VERSION = 0x248C10;
 		OFFSET_SSF2_END_MATCH_CALLBACK = 0x1BC15A;
-		
-		patchSpectator = "\xb0\x01\x90\x90\x90\x90";
 	}
 
 	dwCurrentGameID = CheckROM();
@@ -643,18 +636,6 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 
 	// patch to automatically set the spectator mode
 	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator);
-
-	/*
-	// basic training mode for alpha 2 
-	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2, "\x90\x90");
-	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2 + 0x25, "\x90\x90");
-	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_ALPHA2 + 0x50, "\x90\x90\x90\x90\x90\x90\x41\xB8\x90\x00\x00\x00");
-
-	// basic training mode for sf2ce
-	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE, "\x90\x90");
-	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE + 0x25, "\x90\x90");
-	PatchInMemory(GameBaseAddr, OFFSET_TRAINING_SF2CE + 0x30, "\x90\x90\x90\x90\x90\x90\x41\xB8\x90\x00\x00\x00");
-	*/
 
 	// game version (for online)
 	PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x70\x61\x74\x63\x68\x65\x64\x00");
