@@ -1,5 +1,37 @@
 #include "util.h"
 
+#define MAX_MODULES				500
+
+PVOID GetModuleBaseAddress(PWCHAR moduleName)
+{
+	HMODULE hModules[MAX_MODULES];
+	MODULEINFO ModuleInfo = { 0 };
+	DWORD dwBytesNeeded, i;
+
+	HANDLE hCurrentProcess = GetCurrentProcess();
+
+	while (1)
+	{
+		if (EnumProcessModules(hCurrentProcess, hModules, sizeof(hModules), &dwBytesNeeded))
+		{
+			for (i = 0; i < (dwBytesNeeded / sizeof(HMODULE)); i++)
+			{
+				TCHAR szModName[MAX_PATH];
+				if (GetModuleFileNameEx(hCurrentProcess, hModules[i], szModName,
+					sizeof(szModName) / sizeof(TCHAR)))
+				{
+					if (wcsstr(szModName, moduleName) != NULL)
+					{
+						if (GetModuleInformation(hCurrentProcess, hModules[i], &ModuleInfo, sizeof(ModuleInfo)) == TRUE)
+							return ModuleInfo.lpBaseOfDll;
+					}
+				}
+			}
+		}
+		Sleep(500);
+	}
+}
+
 VOID PatchGameData(PVOID GameData, DWORD dwDataSize, PCHAR pPathFile)
 {
 	HANDLE hFile;

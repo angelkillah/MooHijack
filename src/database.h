@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-#define NUMBER_OF_GAMES		9
+#define NUMBER_OF_GAMES		7
 
 typedef enum { CPS1, CPS2, CPS3, UNKNOWN } SYSTEM;
 
@@ -76,8 +76,6 @@ typedef struct _GAME_LIST {
 		ROMS_INFO_CPS2  RomsInfoCPS2;
 	} RomsInfo;
 	SYSTEM			System;
-	BOOL			bIsMulti;
-	WORD			CoinOffset;
 	ONLINE_INFO     OnlineInfo;
 	PCHAR			OffsetEndMatch;
 	PCHAR			Name;
@@ -85,6 +83,6 @@ typedef struct _GAME_LIST {
 } GAME_LIST;
 
 GAME_LIST GameList[NUMBER_OF_GAMES];
-INT dwCurrentGameID;
+INT dwCurrentGameID[4];
 
 VOID DB_Init();
