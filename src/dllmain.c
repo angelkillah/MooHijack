@@ -129,6 +129,8 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						ExceptionInfo->ContextRecord->Rax = SFA2_ID;
 					if (strcmp(GameList[dwCurrentGameID[2]].Name, "hsf2") == 0)
 						ExceptionInfo->ContextRecord->Rax = SSF2_ID;
+					if (strcmp(GameList[dwCurrentGameID[2]].Name, "ssf2t") == 0)
+						ExceptionInfo->ContextRecord->Rax = SSF2X_ID;
 				}
 			}
 			else if (ExceptionInfo->ContextRecord->Rax == SSF2X_ID)
@@ -204,6 +206,13 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
 						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
 					}
+					// 2X Z80
+					if (ExceptionInfo->ContextRecord->Rax == SSF2X_Z80_SIZE)
+					{
+						OutputDebugStringA("SSF2X Z80 found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
+					}
 					// QS
 					if (ExceptionInfo->ContextRecord->Rax == SSF2_QS_SIZE)
 					{
@@ -218,10 +227,24 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
 						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
 					}
+					// 2X 68k
+					if (ExceptionInfo->ContextRecord->Rax == SSF2X_68K_SIZE)
+					{
+						OutputDebugStringA("SSF2X 68K found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
+					}
 					// 68y
 					if (ExceptionInfo->ContextRecord->Rax == SSF2_68Y_SIZE)
 					{
 						OutputDebugStringA("SSF2 68Y found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
+					}
+					// 2x 68y
+					if (ExceptionInfo->ContextRecord->Rax == SSF2X_68Y_SIZE)
+					{
+						OutputDebugStringA("SSF2X 68Y found");
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
 						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
 					}
@@ -232,12 +255,12 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
 						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
 					}
-					// nv
-					if (ExceptionInfo->ContextRecord->Rax == NV_SIZE)
+					// 2x vrom
+					if (ExceptionInfo->ContextRecord->Rax == SSF2X_VROM_SIZE)
 					{
-						OutputDebugStringA("SSF2 NV found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwNvSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwNvSize;
+						OutputDebugStringA("SSF2X VROM found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
 					}
 					// save state 
 					if (ExceptionInfo->ContextRecord->Rax == SFA3_SAVESTATE_SIZE)
@@ -406,14 +429,6 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					{
 						OutputDebugStringA("cps2 vrom patched");
 						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_VROM_FILE);
-						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-						dwDataSize = 0;
-					}
-					// nv
-					if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwNvSize)
-					{
-						OutputDebugStringA("cps2 nv patched");
-						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_NV_FILE);
 						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 						dwDataSize = 0;
 					}

@@ -14,7 +14,6 @@
 
 // CPS2
 #define PATH_QS_FILE			"rom.qs"
-#define PATH_NV_FILE			"rom.nv"
 #define PATH_68Y_FILE			"rom.68y"
 
 // ALL SYSTEMS
@@ -34,7 +33,10 @@
 #define SSF2_Z80_SIZE			0x20000
 #define SSF2_QS_SIZE			0x400000
 
-#define NV_SIZE					0x80
+#define SSF2X_68K_SIZE			0x380000
+#define SSF2X_68Y_SIZE			0x380000
+#define SSF2X_VROM_SIZE			0x1000000
+#define SSF2X_Z80_SIZE			0x40000
 
 #define SFA3_LOGO_SIZE			0x12E3C
 #define SFA3_SAVESTATE_SIZE		0x5B57F
