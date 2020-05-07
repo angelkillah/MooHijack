@@ -130,7 +130,9 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					if (strcmp(GameList[dwCurrentGameID[2]].Name, "hsf2") == 0)
 						ExceptionInfo->ContextRecord->Rax = SSF2_ID;
 					if (strcmp(GameList[dwCurrentGameID[2]].Name, "ssf2t") == 0)
-						ExceptionInfo->ContextRecord->Rax = SSF2X_ID;
+						ExceptionInfo->ContextRecord->Rax = SSF2_ID;
+					if (strcmp(GameList[dwCurrentGameID[2]].Name, "vsav") == 0)
+						ExceptionInfo->ContextRecord->Rax = SSF2_ID;
 				}
 			}
 			else if (ExceptionInfo->ContextRecord->Rax == SSF2X_ID)
@@ -142,19 +144,39 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(pExceptionAddr, &OrigByte_SwitchGames, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
+		else if (pExceptionAddr == Orig_CPS1)
+		{
+			OutputDebugStringA("CPS1");
+			dwCurrentSystem = CPS1;
+
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_CPS1, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_CPS2)
+		{
+			OutputDebugStringA("CPS2");
+			dwCurrentSystem = CPS2;
+			
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_CPS2, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_CPS3)
+		{
+			OutputDebugStringA("CPS3");
+			dwCurrentSystem = CPS3;
+
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_CPS3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
 		else if (pExceptionAddr == Orig_GetSize)
 		{
-			// CPS1
 			if (dwCurrentGameID[0] != -1)
 			{
-				if (ExceptionInfo->ContextRecord->Rax == SF2HF_SAVESTATE_SIZE)
-				{
-					OutputDebugStringA("SF2HF savestate found");
-					ExceptionInfo->ContextRecord->Rax = SF2HF_SAVESTATE_SIZE;
-					dwDataSize = SF2HF_SAVESTATE_SIZE;
-				}
 				// logo
-				if (ExceptionInfo->ContextRecord->Rax == SF2HF_LOGO_SIZE)
+				if ((ExceptionInfo->ContextRecord->Rax == SF2HF_LOGO_SIZE) || (ExceptionInfo->ContextRecord->Rax == SF2HF_JAP_LOGO_SIZE))
 				{
 					if (GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize)
 					{
@@ -162,6 +184,28 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize;
 						dwDataSize = GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize;
 					}
+				}
+			}
+			if (dwCurrentGameID[2] != -1)
+			{
+				// logo
+				if (ExceptionInfo->ContextRecord->Rax == SFA3_LOGO_SIZE)
+				{
+					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize)
+					{
+						OutputDebugStringA("SFA3 logo found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
+					}
+				}
+			}
+			if ((dwCurrentSystem == CPS1) && (dwCurrentGameID[0] != -1))
+			{
+				if (ExceptionInfo->ContextRecord->Rax == SF2HF_SAVESTATE_SIZE)
+				{
+					OutputDebugStringA("SF2HF savestate found");
+					ExceptionInfo->ContextRecord->Rax = SF2HF_SAVESTATE_SIZE;
+					dwDataSize = SF2HF_SAVESTATE_SIZE;
 				}
 				// 68k
 				if (ExceptionInfo->ContextRecord->Rax == SF2HF_68K_SIZE)
@@ -194,91 +238,49 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					dwDataSize = GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwZ80Size;
 				}
 			}
-			// CPS2
-			if (dwCurrentGameID[2] != -1)
+			else if ((dwCurrentSystem == CPS2) && (dwCurrentGameID[2] != -1) && (bDoLoadCPS2 == TRUE))
 			{
-				if (bDoLoadCPS2 == TRUE)
+				// Z80
+				if (ExceptionInfo->ContextRecord->Rax == SSF2_Z80_SIZE)
 				{
-					// Z80
-					if (ExceptionInfo->ContextRecord->Rax == SSF2_Z80_SIZE)
-					{
-						OutputDebugStringA("SSF2 Z80 found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
-					}
-					// 2X Z80
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2X_Z80_SIZE)
-					{
-						OutputDebugStringA("SSF2X Z80 found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
-					}
-					// QS
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2_QS_SIZE)
-					{
-						OutputDebugStringA("SSF2 QS found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwQsSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwQsSize;
-					}
-					// 68k
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2_68K_SIZE)
-					{
-						OutputDebugStringA("SSF2 68K found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
-					}
-					// 2X 68k
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2X_68K_SIZE)
-					{
-						OutputDebugStringA("SSF2X 68K found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
-					}
-					// 68y
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2_68Y_SIZE)
-					{
-						OutputDebugStringA("SSF2 68Y found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
-					}
-					// 2x 68y
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2X_68Y_SIZE)
-					{
-						OutputDebugStringA("SSF2X 68Y found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
-					}
-					// vrom
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2_VROM_SIZE)
-					{
-						OutputDebugStringA("SSF2 VROM found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
-					}
-					// 2x vrom
-					else if (ExceptionInfo->ContextRecord->Rax == SSF2X_VROM_SIZE)
-					{
-						OutputDebugStringA("SSF2X VROM found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
-					}
-					// save state 
-					else if (ExceptionInfo->ContextRecord->Rax == SFA3_SAVESTATE_SIZE)
-					{
-						OutputDebugStringA("SFA3 savestate found");
-						ExceptionInfo->ContextRecord->Rax = SFA3_SAVESTATE_SIZE;
-						dwDataSize = SFA3_SAVESTATE_SIZE;
-					}
+					OutputDebugStringA("SSF2 Z80 found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
+					dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size;
 				}
-				// logo
-				if (ExceptionInfo->ContextRecord->Rax == SFA3_LOGO_SIZE)
+				// QS
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_QS_SIZE)
 				{
-					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize)
-					{
-						OutputDebugStringA("SFA3 logo found");
-						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
-						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
-					}
+					OutputDebugStringA("SSF2 QS found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwQsSize;
+					dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwQsSize;
+				}
+				// 68k
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_68K_SIZE)
+				{
+					OutputDebugStringA("SSF2 68K found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
+					dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize;
+				}
+				// 68y
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_68Y_SIZE)
+				{
+					OutputDebugStringA("SSF2 68Y found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
+					dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize;
+				}
+				// vrom
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_VROM_SIZE)
+				{
+					OutputDebugStringA("SSF2 VROM found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
+					dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize;
+				}
+				// save state 
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_SAVESTATE_SIZE)
+				{
+					OutputDebugStringA("SSF2 savestate found");
+					ExceptionInfo->ContextRecord->Rax = SSF2_SAVESTATE_SIZE;
+					dwDataSize = SSF2_SAVESTATE_SIZE;
 				}
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -315,6 +317,24 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(Orig_SwitchGames, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_CPS1 + 3))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_CPS1, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_CPS2 + 5))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_CPS2, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_CPS3 + 3))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_CPS3, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetSize + 3))
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -324,9 +344,29 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_GetData + 3))
 		{
 			CHAR gamePath[MAX_PATH];
-			
-			// CPS1
 			if (dwCurrentGameID[0] != -1)
+			{
+				// logo
+				if ((dwDataSize == GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize) && (GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize))
+				{
+					OutputDebugStringA("cps1 logo patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[0]].Name, PATH_LOGO_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+			}
+			if (dwCurrentGameID[2] != -1)
+			{
+				// logo
+				if ((dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize) && (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize))
+				{
+					OutputDebugStringA("cps2 logo patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_LOGO_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+			}
+			if ((dwCurrentSystem == CPS1) && (dwCurrentGameID[0] != -1))
 			{
 				// save state
 				if (dwDataSize == SF2HF_SAVESTATE_SIZE)
@@ -336,24 +376,12 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 					dwDataSize = 0;
 				}
-				// logo
-				else if ((dwDataSize == GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize) && (GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwLogoSize))
-				{
-					OutputDebugStringA("cps1 logo patched");
-					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[0]].Name, PATH_LOGO_FILE);
-					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-					dwDataSize = 0;
-				}
 				// oki
 				else if (dwDataSize == GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dwOkiSize)
 				{
-					PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
-					if (GameData[0] == '\x00')
-					{
-						OutputDebugStringA("cps1 oki patched");
-						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[0]].Name, PATH_OKI_FILE);
-						PatchGameData(GameData, dwDataSize, gamePath);
-					}
+					OutputDebugStringA("cps1 oki patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[0]].Name, PATH_OKI_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 					dwDataSize = 0;
 				}
 				// z80
@@ -381,80 +409,67 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					dwDataSize = 0;
 				}
 			}
-			// CPS2
-			if (dwCurrentGameID[2] != -1)
+			else if ((dwCurrentSystem == CPS2) && (dwCurrentGameID[2] != -1) && (bDoLoadCPS2 == TRUE))
 			{
-				if (bDoLoadCPS2 == TRUE)
+				// z80
+				if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size)
 				{
-					// z80
-					if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwZ80Size)
-					{
-						OutputDebugStringA("cps2 z80 patched");
-						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_Z80_FILE);
-						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-						dwDataSize = 0;
-					}
-					// QS
-					else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwQsSize)
-					{
-						OutputDebugStringA("cps2 qs patched");
-						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_QS_FILE);
-						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-						dwDataSize = 0;
-					}
-					// 68k / 68y
-					else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize)
-					{
-						OutputDebugStringA("cps2 68k/68y patched");
-						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, currentPath);
-						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-						dwDataSize = 0;
-						if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize)
-							currentPath = (currentPath == PATH_68K_FILE) ? PATH_68Y_FILE : PATH_68K_FILE;
-					}
-
-					// 68y file (if size != 68k file)
-					else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize)
-					{
-						if (currentPath == PATH_68K_FILE)
-						{
-							OutputDebugStringA("cps2 68y patched");
-							sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_68Y_FILE);
-							PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-							dwDataSize = 0;
-						}
-					}
-					// vrom
-					else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize)
-					{
-						OutputDebugStringA("cps2 vrom patched");
-						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_VROM_FILE);
-						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-						dwDataSize = 0;
-					}
-					// save state
-					else if (dwDataSize == SFA3_SAVESTATE_SIZE)
-					{
-						// other check to ensure that current save state != 2x 
-						PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
-						if (GameData[8] != '\x44')
-						{
-							OutputDebugStringA("cps2 savestate patched");
-							sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_SAVESTATE_FILE);
-							PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
-						}
-						dwDataSize = 0;
-					}
-				}
-				// logo
-				if ((dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize) && (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize))
-				{
-					OutputDebugStringA("cps2 logo patched");
-					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_LOGO_FILE);
+					OutputDebugStringA("cps2 z80 patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_Z80_FILE);
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 					dwDataSize = 0;
 				}
+				// QS
+				else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwQsSize)
+				{
+					OutputDebugStringA("cps2 qs patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_QS_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// 68k / 68y
+				else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize)
+				{
+					OutputDebugStringA("cps2 68k/68y patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, currentPath);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68kSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize)
+						currentPath = (currentPath == PATH_68K_FILE) ? PATH_68Y_FILE : PATH_68K_FILE;
+				}
 
+				// 68y file (if size != 68k file)
+				else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dw68ySize)
+				{
+					if (currentPath == PATH_68K_FILE)
+					{
+						OutputDebugStringA("cps2 68y patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_68Y_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+				// vrom
+				else if (dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwVromSize)
+				{
+					OutputDebugStringA("cps2 vrom patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_VROM_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// save state
+				else if (dwDataSize == SSF2_SAVESTATE_SIZE)
+				{
+					// other check to ensure that current save state != 2x 
+					PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
+					if (GameData[8] != '\x44')
+					{
+						OutputDebugStringA("cps2 savestate patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_SAVESTATE_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					}
+					dwDataSize = 0;
+				}
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(Orig_GetData, &int3, 1);
@@ -556,12 +571,13 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_SPECTATOR_MODE = 0x4EE42;
 		OFFSET_CREATE_LOBBY = 0x227F4;
 		OFFSET_GAME_VERSION = 0x248C10;
-		OFFSET_SSF2_END_MATCH_CALLBACK = 0x1BC15A;
+		OFFSET_SSF2_TIE_MATCH_CALLBACK = 0x1BC15A;
 		OFFSET_FIND_LOBBY = 0x4B5A5;
 		OFFSET_SSF2_NV = 0x2C3B10;
 		OFFSET_SSF2_VROM = 0x2C3B18;
-		OFFSET_SSF2X_NV = 0x2C46E0;
-		OFFSET_SSF2X_VROM = 0x2C46E8;
+		OFFSET_CPS1_SETUP = 0x1A53A0;
+		OFFSET_CPS2_SETUP = 0x1B1710;
+		OFFSET_CPS3_SETUP = 0x1C8FF0;
 	}
 
 	if (CheckROM() == FALSE)
@@ -576,27 +592,23 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator);
 
 	// game version (for online)
-	PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x70\x61\x74\x63\x68\x65\x64\x00");
+	//PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x70\x61\x74\x63\x68\x65\x64\x00");
 
 	// additional CPS1 game chosen
 	if (dwCurrentGameID[0] != -1)
 	{
 		PatchCPS1GameSettings(GameBaseAddr);
-
-		// patch cps1 callbacks
 		PatchInMemory(GameBaseAddr, OFFSET_CPS1_CALLBACKS, "\xb0\x01\x90\x90");
 	}
 
 	// additional CPS2 game chosen
 	if(dwCurrentGameID[2] != -1)
 	{
-		if (GameList[dwCurrentGameID[2]].OffsetEndMatch != NULL)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_END_MATCH_CALLBACK, GameList[dwCurrentGameID[2]].OffsetEndMatch);
+		if (GameList[dwCurrentGameID[2]].OffsetTieMatch != NULL)
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_MATCH_CALLBACK, GameList[dwCurrentGameID[2]].OffsetTieMatch);
 	}
 
 	// remove nv and additional vrom
-	PatchInMemory(GameBaseAddr, OFFSET_SSF2X_NV, "\x00\x00\x00\x00\x00\x00\x00\x00");
-	PatchInMemory(GameBaseAddr, OFFSET_SSF2X_VROM, "\x00\x00\x00\x00\x00\x00\x00\x00");
 	PatchInMemory(GameBaseAddr, OFFSET_SSF2_NV, "\x00\x00\x00\x00\x00\x00\x00\x00");
 	PatchInMemory(GameBaseAddr, OFFSET_SSF2_VROM, "\x00\x00\x00\x00\x00\x00\x00\x00");
 
@@ -611,7 +623,10 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	Orig_SwitchGames = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SWITCH_GAMES);
 	Orig_CreateLobby = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CREATE_LOBBY);
 	Orig_FindLobby = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_FIND_LOBBY);
-	
+	Orig_CPS1 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_SETUP);
+	Orig_CPS2 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS2_SETUP);
+	Orig_CPS3 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS3_SETUP);
+
 	InstallHook(Orig_CreateLobby, &OrigByte_CreateLobby);
 	InstallHook(Orig_FindLobby, &OrigByte_FindLobby);
 
@@ -623,6 +638,9 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 			InstallHook(Orig_GetSize, &OrigByte_GetSize);
 			InstallHook(Orig_GetData, &OrigByte_GetData);
 			InstallHook(Orig_SwitchGames, &OrigByte_SwitchGames);
+			InstallHook(Orig_CPS1, &OrigByte_CPS1);
+			InstallHook(Orig_CPS2, &OrigByte_CPS2);
+			InstallHook(Orig_CPS3, &OrigByte_CPS3);
 			break;
 		}
 	}

@@ -24,7 +24,8 @@
 #define SF2HF_VROM_SIZE			0x600000
 #define SF2HF_OKI_SIZE			0x40000
 #define SF2HF_Z80_SIZE			0x10000
-#define SF2HF_LOGO_SIZE			0x35D84   
+#define SF2HF_LOGO_SIZE			0x35D84  
+#define SF2HF_JAP_LOGO_SIZE     0x20B3F
 #define SF2HF_SAVESTATE_SIZE	0x5487A
 
 #define SSF2_68K_SIZE			0x280000
@@ -33,13 +34,8 @@
 #define SSF2_Z80_SIZE			0x20000
 #define SSF2_QS_SIZE			0x400000
 
-#define SSF2X_68K_SIZE			0x380000
-#define SSF2X_68Y_SIZE			0x380000
-#define SSF2X_VROM_SIZE			0x1000000
-#define SSF2X_Z80_SIZE			0x40000
-
 #define SFA3_LOGO_SIZE			0x12E3C
-#define SFA3_SAVESTATE_SIZE		0x5B57F
+#define SSF2_SAVESTATE_SIZE		0x5B57F
 
 #define SF2CE_ID				2
 #define SF2HF_ID				3
@@ -75,26 +71,29 @@ int OFFSET_GETSIZE = 0x148238;
 int OFFSET_GETDATA = 0x14827A;
 int OFFSET_CPS1_CALLBACKS = 0x1A9E55;
 int OFFSET_SWITCH_GAMES = 0x1CEFE;
-int OFFSET_SSF2_END_MATCH_CALLBACK = 0x1B0D4A;
+int OFFSET_SSF2_TIE_MATCH_CALLBACK = 0x1B0D4A;
 
 int OFFSET_SPECTATOR_MODE = 0x4E962;
 PCHAR patchSpectator = "\xb0\x01\x90\x90\x90\x90\x90";
 
 int OFFSET_SSF2_NV = 0x2C1F00;
 int OFFSET_SSF2_VROM = 0x2C1F08;
-int OFFSET_SSF2X_NV = 0x2C2AD0;
-int OFFSET_SSF2X_VROM = 0x2C2AD8;
 
 int OFFSET_GAME_VERSION = 0x2471D0;
 int OFFSET_CREATE_LOBBY = 0x223A4;
 int OFFSET_FIND_LOBBY = 0x4B0D5;
 
+int OFFSET_CPS1_SETUP = 0x1CF060;
+int OFFSET_CPS2_SETUP = 0x1E9CE0;
+int OFFSET_CPS3_SETUP = 0x1C3ED0;
+
 PCHAR currentPath;
 PVOID VEHhandler;
 
-PVOID Orig_GetSize, Orig_GetData, Orig_SwitchGames, Orig_CreateLobby, Orig_FindLobby;
-BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_SwitchGames, OrigByte_CreateLobby, OrigByte_FindLobby;
+PVOID Orig_GetSize, Orig_GetData, Orig_SwitchGames, Orig_CreateLobby, Orig_FindLobby, Orig_CPS1, Orig_CPS2, Orig_CPS3;
+BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_SwitchGames, OrigByte_CreateLobby, OrigByte_FindLobby, OrigByte_CPS1, OrigByte_CPS2, OrigByte_CPS3;
 BYTE int3[] = "\xcc";
 
-DWORD dwDataSize = 0;
+DWORD dwCurrentSystem = 3;
+DWORD dwDataSize = 0, dwOldDataSize = 0;
 BOOL bDoLoadCPS2 = FALSE;
