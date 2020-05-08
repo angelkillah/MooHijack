@@ -34,6 +34,12 @@
 #define SSF2_Z80_SIZE			0x20000
 #define SSF2_QS_SIZE			0x400000
 
+#define SSF2X_68K_SIZE			0x380000
+#define SSF2X_68Y_SIZE			0x380000
+#define SSF2X_VROM_SIZE			0x1000000
+#define SSF2X_Z80_SIZE			0x40000
+#define SSF2X_QS_SIZE			0x400000
+
 #define SFA3_LOGO_SIZE			0x12E3C
 #define SSF2_SAVESTATE_SIZE		0x5B57F
 
@@ -78,6 +84,8 @@ PCHAR patchSpectator = "\xb0\x01\x90\x90\x90\x90\x90";
 
 int OFFSET_SSF2_NV = 0x2C1F00;
 int OFFSET_SSF2_VROM = 0x2C1F08;
+int OFFSET_SSF2X_NV = 0x2C2AD0;
+int OFFSET_SSF2X_VROM = 0x2C2AD8;
 
 int OFFSET_GAME_VERSION = 0x2471D0;
 int OFFSET_CREATE_LOBBY = 0x223A4;
@@ -95,5 +103,14 @@ BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_SwitchGames, OrigByte_CreateLo
 BYTE int3[] = "\xcc";
 
 DWORD dwCurrentSystem = 3;
-DWORD dwDataSize = 0, dwOldDataSize = 0;
+DWORD dwDataSize = 0;
 BOOL bDoLoadCPS2 = FALSE;
+
+BYTE hash[SHA1_HASH_SIZE];
+
+// 68k, vrom, oki, z80
+BOOL bDataSF2HFound[4] = { FALSE };
+
+// z80, qs, 68k, 68y, vrom
+BOOL bDataSSF2Found[5] = { FALSE };
+BOOL bDataSSF2XFound[5] = { FALSE };
