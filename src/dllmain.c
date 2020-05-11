@@ -109,7 +109,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			OutputDebugStringA("SwitchGames");
 			
 			// game_1
-			/*if (ExceptionInfo->ContextRecord->Rax == SF2HF_ID) 
+			if (ExceptionInfo->ContextRecord->Rax == SF2HF_ID) 
 			{
 				OutputDebugStringA("SF2HF chosen");
 				if (dwCurrentGameID[0] != -1)
@@ -117,7 +117,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					if (strcmp(GameList[dwCurrentGameID[0]].Name, "sf2ceua") == 0)
 						ExceptionInfo->ContextRecord->Rax = SF2CE_ID;
 				}
-			}*/
+			}
 			// game_2
 			if (ExceptionInfo->ContextRecord->Rax == SSF2X_ID)
 			{
@@ -131,8 +131,8 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				if (dwCurrentGameID[2] != -1)
 				{
 					bDoLoadCPS2 = TRUE;
-					//if (strcmp(GameList[dwCurrentGameID[2]].Name, "sfa2") == 0)
-					//	ExceptionInfo->ContextRecord->Rax = SFA2_ID;
+					if (strcmp(GameList[dwCurrentGameID[2]].Name, "sfa2") == 0)
+						ExceptionInfo->ContextRecord->Rax = SFA2_ID;
 					if (strcmp(GameList[dwCurrentGameID[2]].Name, "ssf2t") == 0)
 						ExceptionInfo->ContextRecord->Rax = SSF2X_ID;
 					else
@@ -455,7 +455,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				else if (dwDataSize == GameList[dwCurrentGameID[0]].RomsInfo.RomsInfoCPS1.dw68kSize)
 				{
 					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
-					if (memcmp(hash, "\x90\x39\x23\x40\x40\xFF\x1B\x09\x03\x10\x48\x71\x17\x45\xAF\x13\x5E\x48\x1C\x29", SHA1_HASH_SIZE) != 0)
+					if ((memcmp(hash, "\x90\x39\x23\x40\x40\xFF\x1B\x09\x03\x10\x48\x71\x17\x45\xAF\x13\x5E\x48\x1C\x29", SHA1_HASH_SIZE) != 0) && (strcmp(GameList[dwCurrentGameID[0]].Name, "sf2ceua") != 0))
 					{
 						OutputDebugStringA("[-] SF2H 68k hash mismatch !");
 						bDataSF2HFound[0] = FALSE;
@@ -652,7 +652,9 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_SPECTATOR_MODE = 0x4EE42;
 		OFFSET_CREATE_LOBBY = 0x227F4;
 		OFFSET_GAME_VERSION = 0x248C10;
-		OFFSET_SSF2_TIE_MATCH_CALLBACK = 0x1BC15A;
+		OFFSET_SSF2_P1WIN_CALLBACK = 0x1BC150;
+		OFFSET_SSF2_TIE_CALLBACK = 0x1BC15A;
+		OFFSET_SSF2_P2WIN_CALLBACK = 0x1BC164; 
 		OFFSET_FIND_LOBBY = 0x4B5A5;
 		OFFSET_SSF2_NV = 0x2C3B10;
 		OFFSET_SSF2_VROM = 0x2C3B18;
@@ -674,11 +676,8 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	// patch to automatically set the spectator mode
 	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator);
 	
-	// game version (for online)
-	//PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x70\x61\x74\x63\x68\x65\x64\x00");
-
 	// additional CPS1 game chosen
-	if (dwCurrentGameID[0] != -1)
+	if ((dwCurrentGameID[0] != -1) && (dwCurrentGameID[0] != 4))
 	{
 		PatchCPS1GameSettings(GameBaseAddr);
 		PatchInMemory(GameBaseAddr, OFFSET_CPS1_CALLBACKS, "\xb0\x01\x90\x90");
@@ -687,8 +686,12 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	// additional CPS2 game chosen
 	if(dwCurrentGameID[2] != -1)
 	{
-		if (GameList[dwCurrentGameID[2]].OffsetTieMatch != NULL)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_MATCH_CALLBACK, GameList[dwCurrentGameID[2]].OffsetTieMatch);
+		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win != 0)
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P1WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win);
+		if(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win != 0)
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P2WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win);
+		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie != 0)
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie);		
 	}
 
 	// remove nv and additional vrom

@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-#define NUMBER_OF_GAMES		12
+#define NUMBER_OF_GAMES		9
 
 typedef enum { CPS1, CPS2, CPS3, UNKNOWN } SYSTEM;
 
@@ -68,6 +68,12 @@ typedef struct _ONLINE_INFO {
 	ULONGLONG	Id;
 } ONLINE_INFO;
 
+typedef struct _CALLBACKS_INFO {
+	PCHAR		OffsetP1Win;
+	PCHAR		OffsetTie;
+	PCHAR		OffsetP2Win;
+} CALLBACKS_INFO;
+
 typedef struct _GAME_LIST {
 	GAME_INFO       GameInfo;
 	union {
@@ -76,7 +82,7 @@ typedef struct _GAME_LIST {
 	} RomsInfo;
 	SYSTEM			System;
 	ONLINE_INFO     OnlineInfo;
-	PCHAR			OffsetTieMatch;
+	CALLBACKS_INFO	CallbacksInfo;
 	PCHAR			Name;
 	PCHAR			Hash;
 } GAME_LIST;
