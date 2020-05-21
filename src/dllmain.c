@@ -108,7 +108,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 		{
 			OutputDebugStringA("SwitchGames");
 			
-			// game_1
+			// game_0
 			if (ExceptionInfo->ContextRecord->Rax == SF2HF_ID) 
 			{
 				OutputDebugStringA("SF2HF chosen");
@@ -118,13 +118,13 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						ExceptionInfo->ContextRecord->Rax = SF2CE_ID;
 				}
 			}
-			// game_2
-			if (ExceptionInfo->ContextRecord->Rax == SSF2X_ID)
+			// game_1
+			else if (ExceptionInfo->ContextRecord->Rax == SSF2X_ID)
 			{
 				OutputDebugStringA("2X chosen");
 				bDoLoadCPS2 = FALSE;
 			}
-			// game_3
+			// game_2
 			else if (ExceptionInfo->ContextRecord->Rax == SFA3_ID)
 			{
 				OutputDebugStringA("SFA3 chosen");
@@ -133,11 +133,17 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					bDoLoadCPS2 = TRUE;
 					if (strcmp(GameList[dwCurrentGameID[2]].Name, "sfa2") == 0)
 						ExceptionInfo->ContextRecord->Rax = SFA2_ID;
-					if (strcmp(GameList[dwCurrentGameID[2]].Name, "ssf2t") == 0)
+					else if (strcmp(GameList[dwCurrentGameID[2]].Name, "ssf2t") == 0)
 						ExceptionInfo->ContextRecord->Rax = SSF2X_ID;
 					else
 						ExceptionInfo->ContextRecord->Rax = SSF2_ID;
 				}
+			}
+			// game_3
+			else if (ExceptionInfo->ContextRecord->Rax == SF33_ID)
+			{
+				if (dwCurrentGameID[3] != 1)
+					ExceptionInfo->ContextRecord->Rax = SF32_ID;
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(pExceptionAddr, &OrigByte_SwitchGames, 1);
@@ -203,6 +209,19 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						OutputDebugStringA("SFA3 logo found");
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
 						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
+					}
+				}
+			}
+			if (dwCurrentGameID[3] != -1)
+			{
+				// logo
+				if (ExceptionInfo->ContextRecord->Rax == SF33_LOGO_SIZE)
+				{
+					if (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize)
+					{
+						OutputDebugStringA("SF33 logo found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize;
+						dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize;
 					}
 				}
 			}
@@ -322,6 +341,53 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					bDataSSF2XFound[4] = TRUE;
 				}
 			}
+			else if ((dwCurrentSystem == CPS3) && (dwCurrentGameID[3] != -1))
+			{
+				// save state 
+				if (ExceptionInfo->ContextRecord->Rax == SF32_SAVESTATE_SIZE)
+				{
+					OutputDebugStringA("SF32 savestate found");
+					ExceptionInfo->ContextRecord->Rax = SF32_SAVESTATE_SIZE;
+					dwDataSize = SF32_SAVESTATE_SIZE;
+				}
+				
+				if (ExceptionInfo->ContextRecord->Rax == SF32_BIOS_SIZE)
+				{
+					OutputDebugStringA("SF32 Bios found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBiosSize;
+					dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBiosSize;
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF32_S1_SIZE)
+				{
+					OutputDebugStringA("SF32 S1 found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS1Size;
+					dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS1Size;
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF32_S2_SIZE)
+				{
+					OutputDebugStringA("SF32 S2 found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS2Size;
+					dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS2Size;
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF32_S3_SIZE)
+				{
+					OutputDebugStringA("SF32 S3 found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS3Size;
+					dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS3Size;
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF32_S4_SIZE)
+				{
+					OutputDebugStringA("SF32 S4 found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS4Size;
+					dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS4Size;
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF32_S5_SIZE)
+				{
+					OutputDebugStringA("SF32 S5 found");
+					ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS5Size;
+					dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS5Size;
+				}
+			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(pExceptionAddr, &OrigByte_GetSize, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
@@ -401,6 +467,17 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				{
 					OutputDebugStringA("cps2 logo patched");
 					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_LOGO_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+			}
+			if (dwCurrentGameID[3] != -1)
+			{
+				// logo
+				if ((dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize) && (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize))
+				{
+					OutputDebugStringA("cps3 logo patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_LOGO_FILE);
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 					dwDataSize = 0;
 				}
@@ -553,6 +630,90 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					bDataSSF2Found[4] = TRUE;
 				}
 			}
+			else if ((dwCurrentSystem == CPS3) && (dwCurrentGameID[3] != -1))
+			{
+				// save state
+				if (dwDataSize == SF32_SAVESTATE_SIZE)
+				{
+					PCHAR GameData = (PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize);
+					OutputDebugStringA("cps3 savestate patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_SAVESTATE_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// Bios
+				if (dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBiosSize)
+				{
+					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
+					if (memcmp(hash, "\xFA\x3D\xA6\x20\x74\xB4\x43\xB7\x1F\x54\x3A\x51\x8A\x7B\x99\x2D\xEF\x81\xF8\xB9", SHA1_HASH_SIZE) == 0)
+					{
+						OutputDebugStringA("cps3 bios patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_BIOS_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+				// S1
+				if (dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS1Size)
+				{
+					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
+					if (memcmp(hash, "\x33\x5F\xA7\x49\x58\x6A\x81\xD9\xE8\x1F\x46\x9A\xC3\x70\x2C\x6F\x67\x6A\x95\x66", SHA1_HASH_SIZE) == 0)
+					{
+						OutputDebugStringA("cps3 s1 patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_S1_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+				// S2
+				if (dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS2Size)
+				{
+					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
+					if (memcmp(hash, "\x56\xDC\xA2\x2B\xA3\x82\xF5\x8D\x0A\xE9\xFD\x9C\xB9\x16\x81\x6D\x7D\x97\xAD\x66", SHA1_HASH_SIZE) == 0)
+					{
+						OutputDebugStringA("cps3 s2 patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_S2_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+				// S3
+				if (dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS3Size)
+				{
+					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
+					if (memcmp(hash, "\x32\x39\x0E\x41\x03\x96\x86\xAC\x02\x91\xA6\x2E\x3B\xC3\x35\xC5\xF3\x11\xFE\x6C", SHA1_HASH_SIZE) == 0)
+					{
+						OutputDebugStringA("cps3 s3 patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_S3_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+				// S4
+				if (dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS4Size)
+				{
+					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
+					if (memcmp(hash, "\x9C\xAC\xE3\xC6\x07\xFA\x39\x35\xBB\x4D\xE8\x6A\x55\xC2\xED\x5E\x1F\x4A\xE2\xE1", SHA1_HASH_SIZE) == 0)
+					{
+						OutputDebugStringA("cps3 s4 patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_S4_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+				// S5
+				if (dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwS5Size)
+				{
+					HashSHA1((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), 0x100, hash);
+					if (memcmp(hash, "\xA8\x47\xC6\x88\x45\x82\x07\xF0\x51\xA8\x64\x68\xF0\x41\x60\xF2\xBC\xF2\x4D\xD4", SHA1_HASH_SIZE) == 0)
+					{
+						OutputDebugStringA("cps3 s5 patched");
+						sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_S5_FILE);
+						PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+						dwDataSize = 0;
+					}
+				}
+			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(Orig_GetData, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
@@ -591,6 +752,19 @@ BOOL IsEuroVersion()
 	return FALSE;
 }
 
+BOOL IsTrainingMode()
+{
+	CHAR training[MAX_PATH];
+	GetPrivateProfileStringA("MooHijack", "training", "", training, MAX_PATH, ".\\config.ini");
+	if (strcmp(training, "enable") == 0)
+	{
+		OutputDebugStringA("Training enabled");
+		return TRUE;
+	}
+	OutputDebugStringA("Training disabled");
+	return FALSE;
+}
+
 BOOL CheckROM()
 {
 	HANDLE hFile;
@@ -613,7 +787,11 @@ BOOL CheckROM()
 	{
 		if (dwCurrentGameID[i] != -1)
 		{
-			sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[i]].Name, PATH_68K_FILE);
+			// CPS3
+			if(i == 3)
+				sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[i]].Name, PATH_S1_FILE);
+			else
+				sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[i]].Name, PATH_68K_FILE);
 			if ((hFile = CreateFileA(gamePath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
 				return -1;
 			if ((dwFileSize = GetFileSize(hFile, NULL)) == 0)
@@ -663,6 +841,8 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_CPS1_SETUP = 0x1A53A0;
 		OFFSET_CPS2_SETUP = 0x1B1710;
 		OFFSET_CPS3_SETUP = 0x1C8FF0;
+		OFFSET_SF32_KEYS = 0x2C7550;
+		OFFSET_SF32_TIE_CALLBACK = 0x1CFE09;
 	}
 
 	if (CheckROM() == FALSE)
@@ -673,32 +853,48 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 
 	Sleep(2000);
 
+	if (IsTrainingMode())
+	{
+		OutputDebugStringA("training mode on");
+
+		// game version (for online)
+		PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x74\x72\x61\x69\x6e\x69\x6e\x00", 8);
+	}
+
 	// patch to automatically set the spectator mode
-	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator);
+	PatchInMemory(GameBaseAddr, OFFSET_SPECTATOR_MODE, patchSpectator, strlen(patchSpectator));
 	
 	// additional CPS1 game chosen
 	if ((dwCurrentGameID[0] != -1) && (dwCurrentGameID[0] != 4))
 	{
 		PatchCPS1GameSettings(GameBaseAddr);
-		PatchInMemory(GameBaseAddr, OFFSET_CPS1_CALLBACKS, "\xb0\x01\x90\x90");
+		PatchInMemory(GameBaseAddr, OFFSET_CPS1_CALLBACKS, "\xb0\x01\x90\x90", 4);
 	}
 
-	// additional CPS2 game chosen
+	// patch CPS2 emulator callbacks 
 	if(dwCurrentGameID[2] != -1)
 	{
 		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win != 0)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P1WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win);
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P1WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win));
 		if(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win != 0)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P2WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win);
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P2WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win));
 		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie != 0)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie);		
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie));
 	}
 
-	// remove nv and additional vrom
-	PatchInMemory(GameBaseAddr, OFFSET_SSF2X_NV, "\x00\x00\x00\x00\x00\x00\x00\x00");
-	PatchInMemory(GameBaseAddr, OFFSET_SSF2X_VROM, "\x00\x00\x00\x00\x00\x00\x00\x00");
-	PatchInMemory(GameBaseAddr, OFFSET_SSF2_NV, "\x00\x00\x00\x00\x00\x00\x00\x00");
-	PatchInMemory(GameBaseAddr, OFFSET_SSF2_VROM, "\x00\x00\x00\x00\x00\x00\x00\x00");
+	
+	if (dwCurrentGameID[3] != -1)
+	{
+		// patch CPS3 emulator callbacks
+		if (strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
+		{
+			if (GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetTie != 0)
+				PatchInMemory(GameBaseAddr, OFFSET_SF32_TIE_CALLBACK, GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetTie, 4);
+		}
+		// patch SF32 cps3 keys
+		if(strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
+			PatchInMemory(GameBaseAddr, OFFSET_SF32_KEYS, "\x32\x23\xe3\x3e\x02\x03\x72\x19\x00\x00", 10);
+	}
 
 	currentPath = PATH_68K_FILE;
 

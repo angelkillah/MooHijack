@@ -48,14 +48,14 @@ VOID PatchGameData(PVOID GameData, DWORD dwDataSize, PCHAR pPathFile)
 	}
 }
 
-VOID PatchInMemory(PVOID Addr, INT Offset, PCHAR Data)
+VOID PatchInMemory(PVOID Addr, INT Offset, PCHAR Data, DWORD Length)
 {
 	PVOID AddrToPatch = NULL;
 	DWORD dwOldProtect;
 	AddrToPatch = (PVOID)((LPBYTE)Addr + Offset);
-	VirtualProtect(AddrToPatch, strlen(Data), PAGE_EXECUTE_READWRITE, &dwOldProtect);
-	memcpy(AddrToPatch, Data, strlen(Data));
-	VirtualProtect(AddrToPatch, strlen(Data), dwOldProtect, &dwOldProtect);
+	VirtualProtect(AddrToPatch, Length, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+	memcpy(AddrToPatch, Data, Length);
+	VirtualProtect(AddrToPatch, Length, dwOldProtect, &dwOldProtect);
 }
 
 VOID HashSHA1(PBYTE pData, DWORD dwDataLen, PBYTE pHash)

@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-#define NUMBER_OF_GAMES		9
+#define NUMBER_OF_GAMES		11
 
 typedef enum { CPS1, CPS2, CPS3, UNKNOWN } SYSTEM;
 
@@ -63,6 +63,16 @@ typedef struct _ROMS_INFO_CPS2 {
 	DWORD	dwLogoSize;
 } ROMS_INFO_CPS2;
 
+typedef struct _ROMS_INFO_CPS3 {
+	DWORD	dwBiosSize;
+	DWORD	dwS1Size;
+	DWORD	dwS2Size;
+	DWORD	dwS3Size;
+	DWORD	dwS4Size;
+	DWORD	dwS5Size;
+	DWORD	dwLogoSize;
+} ROMS_INFO_CPS3;
+
 typedef struct _ONLINE_INFO {
 	PCHAR		Slot;
 	ULONGLONG	Id;
@@ -79,6 +89,7 @@ typedef struct _GAME_LIST {
 	union {
 		ROMS_INFO_CPS1  RomsInfoCPS1;
 		ROMS_INFO_CPS2  RomsInfoCPS2;
+		ROMS_INFO_CPS3  RomsInfoCPS3;
 	} RomsInfo;
 	SYSTEM			System;
 	ONLINE_INFO     OnlineInfo;

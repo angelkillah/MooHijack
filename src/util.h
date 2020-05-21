@@ -8,4 +8,4 @@
 PVOID GetModuleBaseAddress(PWCHAR moduleName);
 VOID HashSHA1(PBYTE pData, DWORD dwDataLen, PBYTE pHash);
 VOID PatchGameData(PVOID GameData, DWORD dwDataSize, PCHAR pPathFile);
-VOID PatchInMemory(PVOID GameBaseAddr, INT Offset, PCHAR Data);
+VOID PatchInMemory(PVOID Addr, INT Offset, PCHAR Data, DWORD Length);
