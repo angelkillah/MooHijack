@@ -5,6 +5,7 @@
 
 #include "database.h"
 #include "util.h"
+#include "training.h"
 
 // CPS1
 #define PATH_OKI_FILE			"rom.oki"

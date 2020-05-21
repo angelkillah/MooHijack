@@ -142,7 +142,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			// game_3
 			else if (ExceptionInfo->ContextRecord->Rax == SF33_ID)
 			{
-				if (dwCurrentGameID[3] != 1)
+				if (dwCurrentGameID[3] != -1)
 					ExceptionInfo->ContextRecord->Rax = SF32_ID;
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
@@ -859,6 +859,27 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 
 		// game version (for online)
 		PatchInMemory(GameBaseAddr, OFFSET_GAME_VERSION, "\x74\x72\x61\x69\x6e\x69\x6e\x00", 8);
+
+		// CPS2
+		if (dwCurrentGameID[2] != -1)
+		{
+			if (strcmp(GameList[dwCurrentGameID[2]].Name, "vsav") == 0)
+				IsEuroVersion() ? PatchVampireSaviorEU(GameBaseAddr) : PatchVampireSaviorJP(GameBaseAddr);
+			else if (strcmp(GameList[dwCurrentGameID[2]].Name, "sfa2") == 0)
+				IsEuroVersion() ? PatchSFA2EU(GameBaseAddr) : PatchSFA2JP(GameBaseAddr);
+		}
+		// SFA3
+		else
+			IsEuroVersion() ? PatchSFA3EU(GameBaseAddr) : PatchSFA3JP(GameBaseAddr);
+		
+		// CPS3
+		if (dwCurrentGameID[3] != 1)
+		{
+			if(strcmp(GameList[dwCurrentGameID[3]].Name, "sf32") == 0)
+				IsEuroVersion() ? PatchSF32EU(GameBaseAddr) : PatchSF32JP(GameBaseAddr);
+			else if(strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
+				IsEuroVersion() ? PatchJojoEU(GameBaseAddr) : PatchJojoJP(GameBaseAddr);
+		}
 	}
 
 	// patch to automatically set the spectator mode
