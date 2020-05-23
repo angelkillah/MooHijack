@@ -119,6 +119,7 @@ VOID PatchSF32EU(PVOID GameBaseAddr)
 	PatchInMemory(GameBaseAddr, 0x1BACC6, "\xB2\xA0", 2);		// mov dl, A0
 	PatchInMemory(GameBaseAddr, 0x1BACBA, "\xA0", 1);
 }
+
 VOID PatchSF32JP(PVOID GameBaseAddr)
 {
 	// force Infinite Time
@@ -150,6 +151,7 @@ VOID PatchJojoEU(PVOID GameBaseAddr)
 	PatchInMemory(GameBaseAddr, 0x1BACC1, "\xB9\xED\x4D\x03\x02\xB2\x90", 7);	// mov ecx, 2034DED; mov dl, 90 
 	PatchInMemory(GameBaseAddr, 0x1BACB4, "\xC6\x81\xED\x4D\x03\x02\x90", 7);   // mov byte ptr [rcx+2034DED], 90
 }
+
 VOID PatchJojoJP(PVOID GameBaseAddr)
 {
 	// Infinite Time
@@ -167,4 +169,68 @@ VOID PatchJojoJP(PVOID GameBaseAddr)
 	PatchInMemory(GameBaseAddr, 0x1CFA74, "\x90\x90", 2);						// nop; nop
 	PatchInMemory(GameBaseAddr, 0x1CFAB1, "\xB9\xCD\x49\x03\x02\xBA\x90", 7);	// mov ecx, 2034DED; mov dl, 90 
 	PatchInMemory(GameBaseAddr, 0x1CFAA4, "\xC6\x81\xED\x4D\x03\x02\x90", 7);   // mov byte ptr [rcx+2034DED], 90
+}
+
+VOID PatchCoinsHSF2EU(PVOID GameBaseAddr)
+{
+	// Infinite Credits FF830A -> 09
+	PatchInMemory(GameBaseAddr, 0x1B0F45, "\x90\x90", 2);				// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1B0F4E, "\x41\xB0\x09", 3);			// mov r8b, 09
+	PatchInMemory(GameBaseAddr, 0x1B0F51, "\xBA\x0A\x83\xFF\x00", 5);	// mov edx, FF830A
+}
+
+VOID PatchCoinsHSF2JP(PVOID GameBaseAddr)
+{
+	// Infinite Credits FF830A -> 09
+	PatchInMemory(GameBaseAddr, 0x1BC355, "\x90\x90", 2);				// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1BC35E, "\x41\xB0\x09", 3);			// mov r8b, 09
+	PatchInMemory(GameBaseAddr, 0x1BC361, "\xBA\x0A\x83\xFF\x00", 5);	// mov edx, FF830A
+}
+
+VOID PatchCoinsNLEU(PVOID GameBaseAddr)
+{
+	// Infinite Credits FF82E9 -> 0909
+	PatchInMemory(GameBaseAddr, 0x1B68B8, "\x90\x90", 2);								// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1B68C1, "\xBA\xE9\x82\xFF\x00\x41\xB8\x09\x09", 9);	// mov edx, FF82E9; mov r8d, 0909
+}
+
+VOID PatchCoinsNLJP(PVOID GameBaseAddr)
+{
+	// Infinite Credits FF82E9 -> 0909
+	PatchInMemory(GameBaseAddr, 0x1C1CC8, "\x90\x90", 2);								// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1C1CD1, "\xBA\xE9\x82\xFF\x00\x41\xB8\x09\x09", 9);	// mov edx, FF82E9; mov r8d, 0909
+}
+
+VOID PatchCoinsVsavEU(PVOID GameBaseAddr)
+{
+	// Infinite Credits FF8076 -> 09
+	PatchInMemory(GameBaseAddr, 0x1B0F45, "\x90\x90", 2);				// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1B0F4E, "\x41\xB0\x09", 3);			// mov r8b, 09
+	PatchInMemory(GameBaseAddr, 0x1B0F51, "\xBA\x76\x80\xFF\x00", 5);	// mov edx, FF8076
+}
+
+VOID PatchCoinsVsavJP(PVOID GameBaseAddr)
+{
+	// Infinite Credits FF8076 -> 09
+	PatchInMemory(GameBaseAddr, 0x1BC355, "\x90\x90", 2);				// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1BC35E, "\x41\xB0\x09", 3);			// mov r8b, 09
+	PatchInMemory(GameBaseAddr, 0x1BC361, "\xBA\x76\x80\xFF\x00", 5);	// mov edx, FF8076
+}
+
+VOID PatchCoinsJojoEU(PVOID GameBaseAddr)
+{
+	// Infinite Credits 20713A8 -> 09
+	PatchInMemory(GameBaseAddr, 0x1BAC84, "\x90\x90", 2);						// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1BACC1, "\xB9\xA8\x13\x07\x02", 5);			// mov ecx, 20713A8
+	PatchInMemory(GameBaseAddr, 0x1BACC6, "\xB2\x09", 2);						// mov dl, 09
+	PatchInMemory(GameBaseAddr, 0x1BACB4, "\xC6\x81\xA8\x13\x07\x02\x09", 7);	// mov byte ptr [rcx+20713A8], 09
+}
+
+VOID PatchCoinsJojoJP(PVOID GameBaseAddr)
+{
+	// Infinite Credits 20713A8 -> 09
+	PatchInMemory(GameBaseAddr, 0x1CFA74, "\x90\x90", 2);						// nop; nop
+	PatchInMemory(GameBaseAddr, 0x1CFAB1, "\xB9\xA8\x13\x07\x02", 5);			// mov ecx, 20713A8
+	PatchInMemory(GameBaseAddr, 0x1CFAB6, "\xB2\x09", 2);						// mov dl, 09
+	PatchInMemory(GameBaseAddr, 0x1CFAA4, "\xC6\x81\xA8\x13\x07\x02\x09", 7);	// mov byte ptr [rcx+20713A8], 09
 }

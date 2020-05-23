@@ -14,4 +14,13 @@ VOID PatchSF32JP(PVOID GameBaseAddr);
 VOID PatchJojoEU(PVOID GameBaseAddr);
 VOID PatchJojoJP(PVOID GameBaseAddr);
 
+VOID PatchCoinsHSF2EU(PVOID GameBaseAddr);
+VOID PatchCoinsHSF2JP(PVOID GameBaseAddr);
+VOID PatchCoinsNLEU(PVOID GameBaseAddr);
+VOID PatchCoinsNLJP(PVOID GameBaseAddr);
+VOID PatchCoinsVsavEU(PVOID GameBaseAddr);
+VOID PatchCoinsVsavJP(PVOID GameBaseAddr);
+VOID PatchCoinsJojoEU(PVOID GameBaseAddr);
+VOID PatchCoinsJojoJP(PVOID GameBaseAddr);
+
 

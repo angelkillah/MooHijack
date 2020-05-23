@@ -873,12 +873,34 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 			IsEuroVersion() ? PatchSFA3EU(GameBaseAddr) : PatchSFA3JP(GameBaseAddr);
 		
 		// CPS3
-		if (dwCurrentGameID[3] != 1)
+		if (dwCurrentGameID[3] != -1)
 		{
 			if(strcmp(GameList[dwCurrentGameID[3]].Name, "sf32") == 0)
 				IsEuroVersion() ? PatchSF32EU(GameBaseAddr) : PatchSF32JP(GameBaseAddr);
 			else if(strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
 				IsEuroVersion() ? PatchJojoEU(GameBaseAddr) : PatchJojoJP(GameBaseAddr);
+		}
+	}
+	// patch cheat callbacks to set coins for arcade mode
+	else
+	{
+		// CPS2
+		if (dwCurrentGameID[2] != -1)
+		{
+			OutputDebugStringA("Patching CPS2 credits...");
+			if (strcmp(GameList[dwCurrentGameID[2]].Name, "hsf2") == 0)
+				IsEuroVersion() ? PatchCoinsHSF2EU(GameBaseAddr) : PatchCoinsHSF2JP(GameBaseAddr);
+			else if (strcmp(GameList[dwCurrentGameID[2]].Name, "ssf2t") == 0)
+				IsEuroVersion() ? PatchCoinsNLEU(GameBaseAddr) : PatchCoinsNLJP(GameBaseAddr);
+			else if (strcmp(GameList[dwCurrentGameID[2]].Name, "vsav") == 0)
+				IsEuroVersion() ? PatchCoinsVsavEU(GameBaseAddr) : PatchCoinsVsavJP(GameBaseAddr);
+		}
+		// CPS3
+		if (dwCurrentGameID[3] != -1)
+		{
+			OutputDebugStringA("Patching CPS3 credits...");
+			if (strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
+				IsEuroVersion() ? PatchCoinsJojoEU(GameBaseAddr) : PatchCoinsJojoJP(GameBaseAddr);
 		}
 	}
 
