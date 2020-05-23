@@ -102,7 +102,86 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(pExceptionAddr, &OrigByte_FindLobby, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_StartMatch)
+		{
+			OutputDebugStringA("Match started");
 
+			if (bMatchFinished == TRUE)
+				bMatchFinished = FALSE;
+			bBackToLobby = FALSE;
+
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_StartMatch, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_FtSettings)
+		{
+			OutputDebugStringA("Getting FT settings...");
+
+			if (strcmpi(ExceptionInfo->ContextRecord->Rax, "1") == 0)
+				dwFirstTo = 1;
+			else if (strcmpi(ExceptionInfo->ContextRecord->Rax, "2") == 0)
+				dwFirstTo = 2;
+			else if (strcmpi(ExceptionInfo->ContextRecord->Rax, "3") == 0)
+				dwFirstTo = 3;
+			else if (strcmpi(ExceptionInfo->ContextRecord->Rax, "0") == 0)
+				dwFirstTo = 5;
+
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_FtSettings, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_2XWinFT)
+		{
+			if (bMatchFinished == FALSE)
+			{
+				OutputDebugStringA("2X match finished");
+				bMatchFinished = TRUE;
+
+				// P1 won the match
+				if ((ExceptionInfo->ContextRecord->Rax & 0xFF) == 0)
+				{
+					OutputDebugStringA("P1 won");
+					dwVictoryCountP1++;
+				}
+				// P2 won the match
+				else
+				{
+					OutputDebugStringA("P2 won");
+					dwVictoryCountP2++;
+				}
+				// P1 won the FT
+				if (dwVictoryCountP1 == dwFirstTo)
+				{
+					OutputDebugStringA("P1 won the set");
+					dwVictoryCountP1 = 0;
+					dwVictoryCountP2 = 0;
+					bBackToLobby = TRUE;
+				}
+				// P2 won the FT
+				else if (dwVictoryCountP2 == dwFirstTo)
+				{
+					OutputDebugStringA("P2 won the set");
+					dwVictoryCountP1 = 0;
+					dwVictoryCountP2 = 0;
+					bBackToLobby = TRUE;
+				}
+				else
+					bBackToLobby = FALSE;
+			}
+			
+			// there are still matches to play
+			if(bBackToLobby == FALSE)
+			{	// don't go back to lobby !
+				char plop[100];
+				sprintf(plop, "FT%d => score : %d - %d", dwFirstTo, dwVictoryCountP1, dwVictoryCountP2);
+				OutputDebugStringA(plop);
+				ExceptionInfo->ContextRecord->Rcx = 0;
+			}
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_2XWinFT, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == Orig_SwitchGames)
 		{
@@ -414,6 +493,24 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			ExceptionInfo->ContextRecord->R9 = 0;
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
 			memcpy(Orig_FindLobby, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_2XWinFT + 2))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_2XWinFT, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_FtSettings + 3))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_FtSettings, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_StartMatch + 7))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_StartMatch, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_SwitchGames + 3))
@@ -843,6 +940,9 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_CPS3_SETUP = 0x1C8FF0;
 		OFFSET_SF32_KEYS = 0x2C7550;
 		OFFSET_SF32_TIE_CALLBACK = 0x1CFE09;
+		OFFSET_SSFT2_WINFT_CALLBACK = 0x1C1516;
+		OFFSET_FT_SETTINGS = 0x21F3C;
+		OFFSET_SSF2T_BEGIN_CALLBACK = 0xB0A0;
 	}
 
 	if (CheckROM() == FALSE)
@@ -925,7 +1025,6 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie));
 	}
 
-	
 	if (dwCurrentGameID[3] != -1)
 	{
 		// patch CPS3 emulator callbacks
@@ -953,9 +1052,15 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	Orig_CPS1 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_SETUP);
 	Orig_CPS2 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS2_SETUP);
 	Orig_CPS3 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS3_SETUP);
+	Orig_2XWinFT = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSFT2_WINFT_CALLBACK);
+	Orig_FtSettings = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_FT_SETTINGS);
+	Orig_StartMatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSF2T_BEGIN_CALLBACK);
 
 	InstallHook(Orig_CreateLobby, &OrigByte_CreateLobby);
 	InstallHook(Orig_FindLobby, &OrigByte_FindLobby);
+	InstallHook(Orig_2XWinFT, &OrigByte_2XWinFT);
+	InstallHook(Orig_FtSettings, &OrigByte_FtSettings);
+	InstallHook(Orig_StartMatch, &OrigByte_StartMatch);
 
 	// additional game to be load
 	for (int i = 0; i < 4; i++)

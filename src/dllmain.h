@@ -104,6 +104,10 @@ int OFFSET_SSF2_P2WIN_CALLBACK = 0x1B0D54;
 
 int OFFSET_SF32_TIE_CALLBACK = 0x1BB019;
 
+int OFFSET_SSFT2_WINFT_CALLBACK = 0x1B6106;
+int OFFSET_FT_SETTINGS = 0x21AEC;
+int OFFSET_SSF2T_BEGIN_CALLBACK = 0xACC0;
+
 int OFFSET_SPECTATOR_MODE = 0x4E962;
 PCHAR patchSpectator = "\xb0\x01\x90\x90\x90\x90\x90";
 
@@ -125,9 +129,14 @@ int OFFSET_SF32_KEYS = 0x2C5670;
 PCHAR currentPath;
 PVOID VEHhandler;
 
-PVOID Orig_GetSize, Orig_GetData, Orig_SwitchGames, Orig_CreateLobby, Orig_FindLobby, Orig_CPS1, Orig_CPS2, Orig_CPS3;
-BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_SwitchGames, OrigByte_CreateLobby, OrigByte_FindLobby, OrigByte_CPS1, OrigByte_CPS2, OrigByte_CPS3;
+PVOID Orig_GetSize, Orig_GetData, Orig_SwitchGames, Orig_CreateLobby, Orig_FindLobby, Orig_CPS1, Orig_CPS2, Orig_CPS3, Orig_2XWinFT, Orig_FtSettings, Orig_StartMatch;
+BYTE OrigByte_GetSize, OrigByte_GetData, OrigByte_SwitchGames, OrigByte_CreateLobby, OrigByte_FindLobby, OrigByte_CPS1, OrigByte_CPS2, OrigByte_CPS3, OrigByte_FtSettings, OrigByte_2XWinFT, OrigByte_FtSettings, OrigByte_StartMatch;
 BYTE int3[] = "\xcc";
+
+DWORD dwVictoryCountP1 = 0, dwVictoryCountP2 = 0;
+DWORD dwFirstTo = 1;
+BOOL bMatchFinished = FALSE;
+BOOL bBackToLobby = FALSE;
 
 DWORD dwCurrentSystem = 3;
 DWORD dwDataSize = 0;
