@@ -61,6 +61,10 @@ typedef struct _ROMS_INFO_CPS2 {
 	DWORD	dwQsSize;
 	DWORD	dwZ80Size;
 	DWORD	dwLogoSize;
+	DWORD   dwBorderBottom;
+	DWORD   dwBorderTop;
+	DWORD   dwBorderLeft;
+	DWORD   dwBorderRight;
 } ROMS_INFO_CPS2;
 
 typedef struct _ROMS_INFO_CPS3 {
@@ -71,6 +75,10 @@ typedef struct _ROMS_INFO_CPS3 {
 	DWORD	dwS4Size;
 	DWORD	dwS5Size;
 	DWORD	dwLogoSize;
+	DWORD   dwBorderBottom;
+	DWORD	dwBorderTop;
+	DWORD   dwBorderLeft;
+	DWORD	dwBorderRight;
 } ROMS_INFO_CPS3;
 
 typedef struct _ONLINE_INFO {

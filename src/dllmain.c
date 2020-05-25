@@ -300,6 +300,42 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwLogoSize;
 					}
 				}
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_BORDER_TOP_SIZE)
+				{
+					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderTop)
+					{
+						OutputDebugStringA("SSF2 border top found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderTop;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderTop;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_BORDER_BOTTOM_SIZE)
+				{
+					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderBottom)
+					{
+						OutputDebugStringA("SSF2 border bottom found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderBottom;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderBottom;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_BORDER_RIGHT_SIZE)
+				{
+					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderRight)
+					{
+						OutputDebugStringA("SSF2 border right found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderRight;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderRight;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SSF2_BORDER_LEFT_SIZE)
+				{
+					if (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderLeft)
+					{
+						OutputDebugStringA("SSF2 border left found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderLeft;
+						dwDataSize = GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderLeft;
+					}
+				}
 			}
 			if (dwCurrentGameID[3] != -1)
 			{
@@ -311,6 +347,42 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 						OutputDebugStringA("SF33 logo found");
 						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize;
 						dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwLogoSize;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF3_BORDER_TOP_SIZE)
+				{
+					if (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderTop)
+					{
+						OutputDebugStringA("SF3 border top found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderTop;
+						dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderTop;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF3_BORDER_BOTTOM_SIZE)
+				{
+					if (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderBottom)
+					{
+						OutputDebugStringA("SF3 border bottom found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderBottom;
+						dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderBottom;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF3_BORDER_RIGHT_SIZE)
+				{
+					if (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderRight)
+					{
+						OutputDebugStringA("SF3 border right found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderRight;
+						dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderRight;
+					}
+				}
+				else if (ExceptionInfo->ContextRecord->Rax == SF3_BORDER_LEFT_SIZE)
+				{
+					if (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderLeft)
+					{
+						OutputDebugStringA("SF3 border left found");
+						ExceptionInfo->ContextRecord->Rax = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderLeft;
+						dwDataSize = GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderLeft;
 					}
 				}
 			}
@@ -583,6 +655,38 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 					dwDataSize = 0;
 				}
+				// top border
+				else if ((dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderTop) && (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderTop))
+				{
+					OutputDebugStringA("cps2 top border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_SSF2_TOP_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// bottom border
+				else if ((dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderBottom) && (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderBottom))
+				{
+					OutputDebugStringA("cps2 bottom border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_SSF2_BOTTOM_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// left border
+				else if ((dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderLeft) && (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderLeft))
+				{
+					OutputDebugStringA("cps2 left border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_SSF2_LEFT_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// right border
+				else if ((dwDataSize == GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderRight) && (GameList[dwCurrentGameID[2]].RomsInfo.RomsInfoCPS2.dwBorderRight))
+				{
+					OutputDebugStringA("cps2 right border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[2]].Name, PATH_SSF2_RIGHT_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
 			}
 			if (dwCurrentGameID[3] != -1)
 			{
@@ -591,6 +695,38 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				{
 					OutputDebugStringA("cps3 logo patched");
 					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_LOGO_FILE);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// top border
+				else if ((dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderTop) && (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderTop))
+				{
+					OutputDebugStringA("cps3 top border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_SF3_TOP_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// bottom border
+				else if ((dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderBottom) && (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderBottom))
+				{
+					OutputDebugStringA("cps3 bottom border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_SF3_BOTTOM_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// left border
+				else if ((dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderLeft) && (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderLeft))
+				{
+					OutputDebugStringA("cps3 left border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_SF3_LEFT_BORDER);
+					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
+					dwDataSize = 0;
+				}
+				// right border
+				else if ((dwDataSize == GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderRight) && (GameList[dwCurrentGameID[3]].RomsInfo.RomsInfoCPS3.dwBorderRight))
+				{
+					OutputDebugStringA("cps3 right border patched");
+					sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[3]].Name, PATH_SF3_RIGHT_BORDER);
 					PatchGameData((PVOID)(LPBYTE)(ExceptionInfo->ContextRecord->R10 - dwDataSize), dwDataSize, gamePath);
 					dwDataSize = 0;
 				}

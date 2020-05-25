@@ -16,6 +16,10 @@
 // CPS2
 #define PATH_QS_FILE			"rom.qs"
 #define PATH_68Y_FILE			"rom.68y"
+#define PATH_SSF2_BOTTOM_BORDER	"BorderSSF2Bottom.png"
+#define PATH_SSF2_TOP_BORDER	"BorderSSF2Top.png"
+#define PATH_SSF2_LEFT_BORDER	"BorderSSF2Left.png"
+#define PATH_SSF2_RIGHT_BORDER	"BorderSSF2Right.png"
 
 // CPS3
 #define PATH_BIOS_FILE			"rom.bios"
@@ -24,6 +28,11 @@
 #define PATH_S3_FILE			"rom.s3"
 #define PATH_S4_FILE			"rom.s4"
 #define PATH_S5_FILE			"rom.s5"
+#define PATH_SF3_BOTTOM_BORDER	"BorderSF3Bottom.png"
+#define PATH_SF3_TOP_BORDER		"BorderSF3Top.png"
+#define PATH_SF3_LEFT_BORDER	"BorderSF3Left.png"
+#define PATH_SF3_RIGHT_BORDER	"BorderSF3Right.png"
+
 
 // ALL SYSTEMS
 #define PATH_LOGO_FILE			"logo.png"
@@ -60,6 +69,16 @@
 #define SF32_S3_SIZE			0x1000000
 #define SF32_S4_SIZE			0x1000000
 #define SF32_S5_SIZE			0x1000000
+
+#define SSF2_BORDER_TOP_SIZE	 0x1FC3F
+#define SSF2_BORDER_BOTTOM_SIZE  0x19620
+#define SSF2_BORDER_RIGHT_SIZE   0x96FE8
+#define SSF2_BORDER_LEFT_SIZE    0x8EACD	
+
+#define SF3_BORDER_TOP_SIZE		0x1322F
+#define SF3_BORDER_BOTTOM_SIZE  0x19769
+#define SF3_BORDER_RIGHT_SIZE   0xAE608
+#define SF3_BORDER_LEFT_SIZE    0xA38B8	
 
 #define SF2CE_ID				2
 #define SF2HF_ID				3
