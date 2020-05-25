@@ -161,6 +161,7 @@ BOOL bBackToLobby = FALSE;
 
 DWORD dwCurrentSystem = 3;
 DWORD dwDataSize = 0;
+DWORD dwBorderSize = -1;
 BOOL bDoLoadCPS2 = FALSE;
 
 BYTE hash[SHA1_HASH_SIZE];

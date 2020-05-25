@@ -32,6 +32,19 @@ PVOID GetModuleBaseAddress(PWCHAR moduleName)
 	}
 }
 
+DWORD GetBorderSize(PCHAR pPathFolder, PCHAR pPathFile)
+{
+	HANDLE hFile;
+	DWORD dwSize = -1;
+	CHAR gamePath[MAX_PATH];
+	sprintf(gamePath, ".\\db\\%s\\%s", pPathFolder, pPathFile);
+	hFile = CreateFileA(gamePath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
+		dwSize = GetFileSize(hFile, NULL);
+	CloseHandle(hFile);
+	return dwSize;
+}
+
 VOID PatchGameData(PVOID GameData, DWORD dwDataSize, PCHAR pPathFile)
 {
 	HANDLE hFile;
