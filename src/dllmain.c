@@ -132,7 +132,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(pExceptionAddr, &OrigByte_FtSettings, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
-		else if (pExceptionAddr == Orig_2XWinFT)
+		else if (pExceptionAddr == Orig_2xEndMatch)
 		{
 			if (bMatchFinished == FALSE)
 			{
@@ -180,7 +180,17 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				ExceptionInfo->ContextRecord->Rcx = 0;
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			memcpy(pExceptionAddr, &OrigByte_2XWinFT, 1);
+			memcpy(pExceptionAddr, &Orig_2xEndMatch, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == Orig_ssf2EndMatch)
+		{
+			if (strcmp(GameList[dwCurrentGameID[2]].Name, "vsav") == 0)
+				ExceptionInfo->ContextRecord->Rsi = 0x8BF0;
+			else if (strcmp(GameList[dwCurrentGameID[2]].Name, "hsf2") == 0)
+				ExceptionInfo->ContextRecord->Rsi = 0x831f;
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(pExceptionAddr, &OrigByte_ssf2EndMatch, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == Orig_SwitchGames)
@@ -495,10 +505,16 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 			memcpy(Orig_FindLobby, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
-		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_2XWinFT + 2))
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_2xEndMatch + 2))
 		{
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			memcpy(Orig_2XWinFT, &int3, 1);
+			memcpy(Orig_2xEndMatch, &int3, 1);
+			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
+		}
+		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_ssf2EndMatch + 2))
+		{
+			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+			memcpy(Orig_ssf2EndMatch, &int3, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == (PVOID)((LPBYTE)Orig_FtSettings + 3))
@@ -927,9 +943,8 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_SPECTATOR_MODE = 0x4EE42;
 		OFFSET_CREATE_LOBBY = 0x227F4;
 		OFFSET_GAME_VERSION = 0x248C10;
-		OFFSET_SSF2_P1WIN_CALLBACK = 0x1BC150;
+		OFFSET_SSF2_ENDMATCH_CALLBACK = 0x1BC150;
 		OFFSET_SSF2_TIE_CALLBACK = 0x1BC15A;
-		OFFSET_SSF2_P2WIN_CALLBACK = 0x1BC164; 
 		OFFSET_FIND_LOBBY = 0x4B5A5;
 		OFFSET_SSF2_NV = 0x2C3B10;
 		OFFSET_SSF2_VROM = 0x2C3B18;
@@ -940,9 +955,11 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_CPS3_SETUP = 0x1C8FF0;
 		OFFSET_SF32_KEYS = 0x2C7550;
 		OFFSET_SF32_TIE_CALLBACK = 0x1CFE09;
-		OFFSET_SSFT2_WINFT_CALLBACK = 0x1C1516;
+		OFFSET_SSFT2_ENDMATCH_CALLBACK = 0x1C1516;
 		OFFSET_FT_SETTINGS = 0x21F3C;
-		OFFSET_SSF2T_BEGIN_CALLBACK = 0xB0A0;
+		OFFSET_SSF2T_STARTMATCH_CALLBACK = 0xB0A0;
+		OFFSET_SSF2_ENDMATCH_CALLBACK_1 = 0x1BB2CC;  
+		OFFSET_SSF2_ENDMATCH_CALLBACK_2 = 0x1BB2C0; 
 	}
 
 	if (CheckROM() == FALSE)
@@ -1017,10 +1034,11 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	// patch CPS2 emulator callbacks 
 	if(dwCurrentGameID[2] != -1)
 	{
-		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win != 0)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P1WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1Win));
-		if(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win != 0)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_P2WIN_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2Win));
+		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch != 0)
+		{
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch));
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK_2, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1WinCount, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1WinCount));
+		}
 		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie != 0)
 			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie));
 	}
@@ -1052,13 +1070,14 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 	Orig_CPS1 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS1_SETUP);
 	Orig_CPS2 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS2_SETUP);
 	Orig_CPS3 = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_CPS3_SETUP);
-	Orig_2XWinFT = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSFT2_WINFT_CALLBACK);
+	Orig_2xEndMatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSFT2_ENDMATCH_CALLBACK);
 	Orig_FtSettings = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_FT_SETTINGS);
-	Orig_StartMatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSF2T_BEGIN_CALLBACK);
+	Orig_StartMatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSF2T_STARTMATCH_CALLBACK);
+	Orig_ssf2EndMatch = (PVOID)((LPBYTE)GameBaseAddr + OFFSET_SSF2_ENDMATCH_CALLBACK_1);
 
 	InstallHook(Orig_CreateLobby, &OrigByte_CreateLobby);
 	InstallHook(Orig_FindLobby, &OrigByte_FindLobby);
-	InstallHook(Orig_2XWinFT, &OrigByte_2XWinFT);
+	InstallHook(Orig_2xEndMatch, &OrigByte_2xEndMatch);
 	InstallHook(Orig_FtSettings, &OrigByte_FtSettings);
 	InstallHook(Orig_StartMatch, &OrigByte_StartMatch);
 
@@ -1073,6 +1092,8 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 			InstallHook(Orig_CPS1, &OrigByte_CPS1);
 			InstallHook(Orig_CPS2, &OrigByte_CPS2);
 			InstallHook(Orig_CPS3, &OrigByte_CPS3);
+			if(i == 2)
+				InstallHook(Orig_ssf2EndMatch, &OrigByte_ssf2EndMatch);
 			break;
 		}
 	}

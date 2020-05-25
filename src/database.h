@@ -79,9 +79,9 @@ typedef struct _ONLINE_INFO {
 } ONLINE_INFO;
 
 typedef struct _CALLBACKS_INFO {
-	PCHAR		OffsetP1Win;
+	PCHAR		OffsetEndMatch;
 	PCHAR		OffsetTie;
-	PCHAR		OffsetP2Win;
+	PCHAR		OffsetP1WinCount;
 } CALLBACKS_INFO;
 
 typedef struct _GAME_LIST {
