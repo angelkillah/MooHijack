@@ -1111,7 +1111,6 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_CREATE_LOBBY = 0x227F4;
 		OFFSET_GAME_VERSION = 0x248C10;
 		OFFSET_SSF2_ENDMATCH_CALLBACK = 0x1BC150;
-		OFFSET_SSF2_TIE_CALLBACK = 0x1BC15A;
 		OFFSET_FIND_LOBBY = 0x4B5A5;
 		OFFSET_SSF2_NV = 0x2C3B10;
 		OFFSET_SSF2_VROM = 0x2C3B18;
@@ -1121,7 +1120,8 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		OFFSET_CPS2_SETUP = 0x1B1710;
 		OFFSET_CPS3_SETUP = 0x1C8FF0;
 		OFFSET_SF32_KEYS = 0x2C7550;
-		OFFSET_SF32_TIE_CALLBACK = 0x1CFE09;
+		OFFSET_SF32_ENDMATCH_CALLBACK = 0x1CFE09;
+		OFFSET_SF32_ENDMATCH_CALLBACK_2 = 0x1CEDF0;
 		OFFSET_SSFT2_ENDMATCH_CALLBACK = 0x1C1516;
 		OFFSET_FT_SETTINGS = 0x21F3C;
 		OFFSET_SSF2T_STARTMATCH_CALLBACK = 0xB0A0;
@@ -1204,10 +1204,8 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch != 0)
 		{
 			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch));
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK_2, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1WinCount, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP1WinCount));
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK_2, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2WinCount, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2WinCount));
 		}
-		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie != 0)
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_TIE_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetTie));
 	}
 
 	if (dwCurrentGameID[3] != -1)
@@ -1215,8 +1213,11 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		// patch CPS3 emulator callbacks
 		if (strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
 		{
-			if (GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetTie != 0)
-				PatchInMemory(GameBaseAddr, OFFSET_SF32_TIE_CALLBACK, GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetTie, 4);
+			if (GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetEndMatch != 0)
+			{
+				PatchInMemory(GameBaseAddr, OFFSET_SF32_ENDMATCH_CALLBACK, GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetEndMatch, 4);
+				PatchInMemory(GameBaseAddr, OFFSET_SF32_ENDMATCH_CALLBACK_2, GameList[dwCurrentGameID[3]].CallbacksInfo.OffsetP2WinCount, 4);
+			}
 		}
 		// patch SF32 cps3 keys
 		if(strcmp(GameList[dwCurrentGameID[3]].Name, "jojoban") == 0)
@@ -1259,8 +1260,7 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 			InstallHook(Orig_CPS1, &OrigByte_CPS1);
 			InstallHook(Orig_CPS2, &OrigByte_CPS2);
 			InstallHook(Orig_CPS3, &OrigByte_CPS3);
-			if(i == 2)
-				InstallHook(Orig_ssf2EndMatch, &OrigByte_ssf2EndMatch);
+			InstallHook(Orig_ssf2EndMatch, &OrigByte_ssf2EndMatch);
 			break;
 		}
 	}
