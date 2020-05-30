@@ -180,7 +180,7 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 				ExceptionInfo->ContextRecord->Rcx = 0;
 			}
 			VirtualProtect(pExceptionAddr, 1, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			memcpy(pExceptionAddr, &Orig_2xEndMatch, 1);
+			memcpy(pExceptionAddr, &OrigByte_2xEndMatch, 1);
 			VirtualProtect(pExceptionAddr, 1, dwOldProtect, &dwOldProtect);
 		}
 		else if (pExceptionAddr == Orig_ssf2EndMatch)
@@ -1045,6 +1045,19 @@ BOOL IsTrainingMode()
 	return FALSE;
 }
 
+BOOL IsExperimental()
+{
+	CHAR experimental[MAX_PATH];
+	GetPrivateProfileStringA("MooHijack", "experimental", "", experimental, MAX_PATH, ".\\config.ini");
+	if (strcmp(experimental, "enable") == 0)
+	{
+		OutputDebugStringA("Experimental enabled");
+		return TRUE;
+	}
+	OutputDebugStringA("Experimental disabled");
+	return FALSE;
+}
+
 BOOL CheckROM()
 {
 	HANDLE hFile;
@@ -1135,6 +1148,14 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		return -1;
 	}
 
+	if (IsExperimental())
+	{
+		MessageBoxA(NULL, "experimental on", "experimental", MB_OK);
+		PatchInMemory(GameBaseAddr, 0x1B6800, "\xc3", 1);
+		PatchInMemory(GameBaseAddr, 0x1B51C0, "\xc3", 1);
+		return 1;
+	}
+
 	Sleep(2000);
 
 	if (IsTrainingMode())
@@ -1198,13 +1219,13 @@ DWORD WINAPI Payload(LPVOID lpParameter)
 		PatchInMemory(GameBaseAddr, OFFSET_CPS1_CALLBACKS, "\xb0\x01\x90\x90", 4);
 	}
 
-	// patch CPS2 emulator callbacks 
 	if(dwCurrentGameID[2] != -1)
 	{
+		// patch CPS2 emulator callbacks 
 		if (GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch != 0)
 		{
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch));
-			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK_2, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2WinCount, strlen(GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2WinCount));
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetEndMatch, 2);
+			PatchInMemory(GameBaseAddr, OFFSET_SSF2_ENDMATCH_CALLBACK_2, GameList[dwCurrentGameID[2]].CallbacksInfo.OffsetP2WinCount, 2);
 		}
 	}
 

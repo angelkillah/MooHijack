@@ -190,15 +190,17 @@ VOID PatchCoinsHSF2JP(PVOID GameBaseAddr)
 VOID PatchCoinsNLEU(PVOID GameBaseAddr)
 {
 	// Infinite Credits FF82E9 -> 0909
-	PatchInMemory(GameBaseAddr, 0x1B68B8, "\x90\x90", 2);								// nop; nop
-	PatchInMemory(GameBaseAddr, 0x1B68C1, "\xBA\xE9\x82\xFF\x00\x41\xB8\x09\x09", 9);	// mov edx, FF82E9; mov r8d, 0909
+	PatchInMemory(GameBaseAddr, 0x1B68D6, "\x48\x8D\x8F\x98\xAE\x0C\x00", 7);					// lea rcx, qword ptr ds:[rdi+CAE98]
+	PatchInMemory(GameBaseAddr, 0x1B68DD, "\xBA\xE9\x82\xFF\x00\x41\xB8\x09\x09\x00\x00", 11);	// mov edx, FF82E9; mov r8d, 0909
+	PatchInMemory(GameBaseAddr, 0x1B68E8, "\xEB\xE2", 2);										// jmp -0x1C
 }
 
 VOID PatchCoinsNLJP(PVOID GameBaseAddr)
 {
 	// Infinite Credits FF82E9 -> 0909
-	PatchInMemory(GameBaseAddr, 0x1C1CC8, "\x90\x90", 2);								// nop; nop
-	PatchInMemory(GameBaseAddr, 0x1C1CD1, "\xBA\xE9\x82\xFF\x00\x41\xB8\x09\x09", 9);	// mov edx, FF82E9; mov r8d, 0909
+	PatchInMemory(GameBaseAddr, 0x1C1CE6, "\x48\x8D\x8F\x98\xAE\x0C\x00", 7);					// lea rcx, qword ptr ds:[rdi+CAE98]
+	PatchInMemory(GameBaseAddr, 0x1C1CED, "\xBA\xE9\x82\xFF\x00\x41\xB8\x09\x09\x00\x00", 11);	// mov edx, FF82E9; mov r8d, 0909
+	PatchInMemory(GameBaseAddr, 0x1C1CF8, "\xEB\xE2", 2);										// jmp -0x1C
 }
 
 VOID PatchCoinsVsavEU(PVOID GameBaseAddr)
