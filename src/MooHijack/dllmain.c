@@ -1004,25 +1004,6 @@ LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-INT GetGameInfo(PBYTE hash)
-{
-	DWORD i, j;
-	BYTE dbHash[SHA1_HASH_SIZE];
-
-	if (hash != NULL)
-	{
-		for (i = 0; i < NUMBER_OF_GAMES; i++)
-		{
-			for (j = 0; j < SHA1_HASH_SIZE; j++)
-				sscanf_s(GameList[i].Hash + 2 * j, "%02x", &dbHash[j]);
-
-			if (memcmp(hash, dbHash, SHA1_HASH_SIZE) == 0)
-				return i;
-		}
-	}
-	return -1;
-}
-
 BOOL IsEuroVersion()
 {
 	CHAR version[MAX_PATH];
@@ -1076,31 +1057,6 @@ BOOL CheckROM()
 	GetPrivateProfileStringA("MooHijack", "game4", "", gameID, MAX_PATH, ".\\config.ini");
 	dwCurrentGameID[3] = atoi(gameID);
 
-	for (i = 0; i < 4; i++)
-	{
-		if (dwCurrentGameID[i] != -1)
-		{
-			// CPS3
-			if(i == 3)
-				sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[i]].Name, PATH_S1_FILE);
-			else
-				sprintf(gamePath, ".\\db\\%s\\%s", GameList[dwCurrentGameID[i]].Name, PATH_68K_FILE);
-			if ((hFile = CreateFileA(gamePath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
-				return -1;
-			if ((dwFileSize = GetFileSize(hFile, NULL)) == 0)
-				return -1;
-			if ((buf = (PBYTE)malloc(dwFileSize * sizeof(BYTE))) == NULL)
-				exit(EXIT_FAILURE);
-			ReadFile(hFile, buf, dwFileSize, &dwBytesRead, NULL);
-			CloseHandle(hFile);
-			
-			HashSHA1(buf, dwFileSize, hash);
-			free(buf);
-
-			if (GetGameInfo(hash) == -1)
-				return FALSE;
-		}
-	}
 	return TRUE;
 }
 

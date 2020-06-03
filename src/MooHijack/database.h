@@ -102,7 +102,6 @@ typedef struct _GAME_LIST {
 	ONLINE_INFO     OnlineInfo;
 	CALLBACKS_INFO	CallbacksInfo;
 	PCHAR			Name;
-	PCHAR			Hash;
 } GAME_LIST;
 
 GAME_LIST GameList[NUMBER_OF_GAMES];
